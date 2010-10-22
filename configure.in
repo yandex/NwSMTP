@@ -1,0 +1,83 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.59)
+AC_INIT([nwsmtp],[0.0.1],[khanton@yandex.ru])
+AM_INIT_AUTOMAKE
+AC_CONFIG_SRCDIR([src/main.cpp])
+AC_CONFIG_HEADER([config.h])
+
+AM_MAINTAINER_MODE
+
+m4_include([m4/acx_pthread.m4])
+m4_include([m4/ax_cxx_check_lib.m4])
+m4_include([m4/ac_boost_base.m4])
+m4_include([m4/ac_boost_thread.m4])
+m4_include([m4/ax_boost_system.m4])
+m4_include([m4/ax_boost_program_options.m4])
+m4_include([m4/ax_lib_expat.m4])
+
+AC_ARG_WITH([blackbox],
+    AS_HELP_STRING([--with-blackbox], [use blackbox (default is no)]),
+    [
+        if test "$withval" = "no"; then
+	   want_blackbox="no"
+	elif test "$withval" = "yes"; then
+	    want_blackbox="yes" 
+	else
+	    want_blackbox="yes"
+	fi
+    ],	
+    [want_blackbox="no"]
+)
+if test "$want_blackbox" = yes; then
+    AC_MSG_NOTICE([will use Blackbox Auth])
+    AC_DEFINE([ENABLE_AUTH_BLACKBOX], [1], [Define if we want to use Blackbox for user authorization])
+fi
+
+	
+# Checks for programs.
+AC_PROG_LIBTOOL
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+
+# Checks for libraries.
+AX_LIB_EXPAT
+ACX_PTHREAD
+AX_BOOST_BASE(1.42)
+AX_BOOST_SYSTEM
+AX_BOOST_THREAD
+AX_BOOST_PROGRAM_OPTIONS
+AC_CHECK_LIB([spf2], [SPF_realloc])
+AC_CHECK_LIB(opendkim, dkim_set_key_lookup)
+AC_CHECK_LIB(hostsearch, bbUrls2)
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([arpa/inet.h netinet/in.h stdlib.h sys/socket.h sys/time.h syslog.h unistd.h memory.h netdb.h stdlib.h string.h])
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([gethostname memset socket strcasecmp strdup strncasecmp])
+
+AC_LANG_PUSH(C++)
+AC_CHECK_HEADERS([pa/interface.h])
+AC_LANG_POP(C++)
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_CONST
+AC_STRUCT_TM
+
+# Checks for library functions.
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_LSTAT
+AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
+AC_FUNC_MKTIME
+AC_FUNC_STRFTIME
+AC_CHECK_FUNCS([memset socket strcasecmp strdup strncasecmp endgrent endpwent memset socket strcasecmp strchr strerror strncasecmp])
+
+AC_CONFIG_FILES([Makefile src/Makefile src/tests/Makefile etc/Makefile])
+AC_OUTPUT

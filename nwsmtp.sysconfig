@@ -1,0 +1,10 @@
+# Defaults for nwsmtp initscript
+# sourced by /etc/init.d/nwsmtp
+# installed at /etc/sysconfig/nwsmtp by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Additional options that are passed to the Daemon.
+OPTIONS="-c /etc/nwsmtp/nwsmtp.conf -p /var/run/nwsmtp/nwsmtp.pid"

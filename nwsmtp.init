@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# nwsmtp	Start the nwsmtp daemon
+#
+# chkconfig: 345 98 05
+# description: nwsmtp
+# processname: nwsmtp
+# pidfile: /var/run/nwsmtp.pid
+
+
+# Source function library
+[ -f /etc/rc.d/init.d/functions ] && . /etc/rc.d/init.d/functions
+
+# pull in oracle's environment
+[ -f /etc/oraprofile ] && . /etc/oraprofile
+
+# pull in sysconfig settings
+[ -f /etc/sysconfig/nwsmtp ] && . /etc/sysconfig/nwsmtp
+
+ulimit -s 512
+ulimit -n 10240
+ulimit -c unlimited
+
+RETVAL=0
+DAEMON_COREFILE_LIMIT=unlimited
+
+PATH=/sbin:/bin:/usr/bin:/usr/sbin
+prog="/usr/sbin/nwsmtp"
+
+
+
+start()
+{
+	echo -n $"Starting nwsmtp daemon: "
+	if [ "$(pidofproc $prog)" = "" ]; then
+		daemon $prog $OPTIONS
+		echo
+	else
+		failure
+		echo
+	fi
+}
+
+stop()
+{
+	echo -n $"Stopping nwsmtp daemon: "
+	killproc $prog
+	echo
+}
+
+case "$1" in
+  start)
+	start
+        ;;
+
+  stop)
+	stop
+        ;;
+  status)
+        status $prog
+        ;;
+  restart|reload)
+        $0 stop
+        $0 start
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|status|restart|reload}"
+        exit 1
+esac
+
+exit 0
+
