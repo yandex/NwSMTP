@@ -1,1 +1,19 @@
+ GPL Licensed fully asynchronous SMTP proxy server for Linux used as a frontend proxy for Yandex.Mail. 
+
+Features include but are not limited to: ssl support, rbl checks, spam filtering, virus filtering, spf checks, dkim checks.
+
+Prerequisites:
+Linux OS,
+boost >= 1.44.0-0 (see http://sourceforge.net/projects/boost/files/boost/1.44.0/ )
+expat >= 1.95.8-8.3 (see http://sourceforge.net/projects/expat/ )
+libspf2 >= 1.2.9 (see http://www.libspf2.org/)
+libopendkim >= 1.2.2-2 (see http://sourceforge.net/projects/opendkim/ )
+
+To build:
+./configure
+make
+make install
+
+A sample config file (nwsmtp.conf) is included in the distribution. To run:
+nwsmtp -c nwsmtp.conf
 

@@ -170,7 +170,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-CONFS = ip_param.conf nwsmtp.conf remove_header.conf
+CONFS = ip_param.conf nwsmtp.conf remove_headers.conf
 all: all-am
 
 .SUFFIXES:
@@ -253,6 +253,7 @@ all-am: Makefile
 installdirs:
 install: install-am
 install-exec: install-exec-am
+install-data: install-data-am
 uninstall: uninstall-am
 
 install-am: all-am
@@ -292,8 +293,6 @@ info: info-am
 
 info-am:
 
-install-data-am:
-
 install-exec-am:
 
 install-info: install-info-am
@@ -331,7 +330,7 @@ uninstall-am: uninstall-info-am
 	uninstall-info-am
 
 
-install-data:
+install-data-am:
 	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/nwsmtp
 	$(INSTALL_DATA) $(CONFS) $(DESTDIR)$(sysconfdir)/nwsmtp
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
+/* Define if we want to use Blackbox for user authorization */
+#undef ENABLE_AUTH_BLACKBOX
+
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 

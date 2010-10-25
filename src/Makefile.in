@@ -214,6 +214,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+AM_CPPFLAGS = -I$(top_srcdir)
 AM_CXXFLAGS = -Wall
 nwsmtp_CFLAGS = @EXPAT_CFLAGS@
 nwsmtp_CPPFLAGS = @BOOST_CPPFLAGS@
