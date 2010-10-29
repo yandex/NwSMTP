@@ -170,7 +170,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-CONFS = ip_param.conf nwsmtp.conf remove_headers.conf
+CONFS = ip_param.conf nwsmtp.conf remove_headers.conf virtual_alias_maps
 all: all-am
 
 .SUFFIXES:
