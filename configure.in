@@ -54,7 +54,7 @@ AX_BOOST_THREAD
 AX_BOOST_PROGRAM_OPTIONS
 AC_CHECK_LIB([spf2], [SPF_realloc])
 AC_CHECK_LIB(opendkim, dkim_set_key_lookup)
-AC_CHECK_LIB(hostsearch, bbUrls2)
+
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -75,6 +75,25 @@ AS_IF([test "x$with_pa" = "xyes"],
 	AS_IF([ test "x$have_pa" = "xno" ],
                 [
             	    AC_MSG_ERROR([performance analizer not found])
+                ]
+             )
+      ]
+     )
+
+AC_ARG_WITH([hostsearch],
+    AS_HELP_STRING([--with-hostsearch], [use libhostsearch analyzer. Default: no]))
+    
+AS_IF([test "x$with_hostsearch" = "xyes"],
+      [
+	AC_LANG_PUSH(C++)
+	AC_CHECK_HEADERS([hostsearch/hostsearch.h],[have_hostsearch=yes],[have_hostsearch=no])
+	AC_LANG_POP(C++)
+	
+	AC_CHECK_LIB(hostsearch, bbUrls2)
+
+	AS_IF([ test "x$have_hostsearch" = "xno" ],
+                [
+            	    AC_MSG_ERROR([libhostsearch not found])
                 ]
              )
       ]

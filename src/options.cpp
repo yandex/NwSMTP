@@ -9,9 +9,13 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <net/dns_resolver.hpp>
 #include <exception>       
-#include <hostsearch/hostsearch.h>
 
 #include "options.h"
+
+#if defined(HAVE_HOSTSEARCH_HOSTSEARCH_H)
+#include <hostsearch/hostsearch.h>
+#endif
+
 
 char *temp_error = "451 4.7.1 Service unavailable - try again later";
 char *temp_user_error = "451 4.7.1 Requested action aborted: error in processing";
@@ -288,8 +292,10 @@ bool server_parameters::parse_config(int _argc, char* _argv[], std::ostream& _ou
                 ("bb_fallback_time", boost::program_options::value<time_t>(&m_bb_fallback_time), "black box fallback time")
                 ("bb_return_time", boost::program_options::value<time_t>(&m_bb_return_time), "black box return time")
                 ("bb_timeout", boost::program_options::value<time_t>(&m_bb_timeout), "black box session timeout")
-                ("bb_file_path", boost::program_options::value<std::string>(&m_bb_file_path), "bb libhostsearch path")
+#if defined(HAVE_HOSTSEARCH_HOSTSEARCH_H)                
+                ("bb_file_path", boost::program_options::value<std::string>(&m_bb_file_path), "bb path")
                 ("bb_port", boost::program_options::value<int>(&m_bb_port)->default_value(80), "bb port used only for bb_file_path")
+#endif                
               
                 ("spf_timeout", boost::program_options::value<time_t>(&m_spf_timeout)->default_value(15), "spf calculation timeout")
                 ("dkim_timeout", boost::program_options::value<time_t>(&m_dkim_timeout)->default_value(15), "dkim calculation timeout")
@@ -307,10 +313,10 @@ bool server_parameters::parse_config(int _argc, char* _argv[], std::ostream& _ou
                 ("so_return_time", boost::program_options::value<time_t>(&m_so_return_time), "so return time")
                 ("so_connect_timeout", boost::program_options::value<time_t>(&m_so_connect_timeout), "so connect timeout")
                 ("so_data_timeout", boost::program_options::value<time_t>(&m_so_timeout), "so session timeout")
+#if defined(HAVE_HOSTSEARCH_HOSTSEARCH_H)                                
                 ("so_file_path", boost::program_options::value<std::string>(&m_so_file_path), "so libhostsearch path")
                 ("so_port", boost::program_options::value<int>(&m_so_port)->default_value(2525), "so port used only for so_file_path")
-              
-              
+#endif
                 ("av_primary", boost::program_options::value<remote_point>(&m_av_primary_host), "av host")
                 ("av_secondary", boost::program_options::value<remote_point>(&m_av_secondary_host), "av secondary")
                 ("av_fallback_time", boost::program_options::value<time_t>(&m_av_fallback_time), "av fallback time")
@@ -466,23 +472,21 @@ bool server_parameters::parse_config(int _argc, char* _argv[], std::ostream& _ou
                 return false;
             }
         }
-        
+
+#if defined(HAVE_HOSTSEARCH_HOSTSEARCH_H)                    
         if (m_so_check && !m_so_file_path.empty())
         {
-            char big_buffer[1024];
-            
+	    char big_buffer[1024];
             if ((bbUrls2(m_so_file_path.c_str(), big_buffer, 1024) == 0) && (big_buffer[0] != 0))
             {
                 m_so_primary_host.m_host_name = big_buffer;
                 m_so_primary_host.m_port = m_so_port;
-                
-                //              std::cout << "so_host:" << m_so_primary_host.m_host_name << " ,so_port:" << m_so_primary_host.m_port << std::endl;
-                
             }
         }
-
+        
         if (m_bb_check && !m_bb_file_path.empty())
         {
+        
             char big_buffer[1024];
             
             if ((bbUrls2(m_bb_file_path.c_str(), big_buffer, 1024) == 0) && (big_buffer[0] != 0))
@@ -490,11 +494,10 @@ bool server_parameters::parse_config(int _argc, char* _argv[], std::ostream& _ou
                 if (parse_strong_http_with_out_port(std::string(big_buffer), m_bb_primary_host))
                 {
                     m_bb_primary_host.m_port = m_bb_port;
-                    //                      std::cout << "bb_host:" << m_bb_primary_host.m_host_name << " ,bb_port:" << m_bb_primary_host.m_port << " ,bb_url:" << m_bb_primary_host.m_url << std::endl;
                 }
             }
         }
-
+#endif            
                 
         return true;
     }

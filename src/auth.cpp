@@ -81,7 +81,18 @@ auth::auth_status_t auth::first(const std::string &_method, const std::string &_
     {
         method_ = METHOD_LOGIN;
         
-        _reply = "334 VXNlcm5hbWU6\r\n";                                // username
+        if (!_init.empty())
+        {
+    	    extract_base64_str(_init, username_);
+    	    
+            _reply = "334 UGFzc3dvcmQ6\r\n";
+            
+            return username_.empty() ? AUTH_FORM : AUTH_MORE;
+        }
+        else
+        {
+    	    _reply = "334 VXNlcm5hbWU6\r\n";                                // username
+    	}    
         
         return AUTH_MORE;
     }
@@ -95,7 +106,7 @@ auth::auth_status_t auth::next(const std::string &_response, std::string &_reply
     {
         case METHOD_PLAIN:
         
-            if (extract_user_password(_reply, username_, password_))
+            if (extract_user_password(_response, username_, password_))
             {
                 return (username_.empty() || password_.empty()) ? AUTH_FORM : AUTH_DONE;
             }

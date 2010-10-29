@@ -33,6 +33,9 @@
 /* Define to 1 if you have the `gethostname' function. */
 #undef HAVE_GETHOSTNAME
 
+/* Define to 1 if you have the <hostsearch/hostsearch.h> header file. */
+#undef HAVE_HOSTSEARCH_HOSTSEARCH_H
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 

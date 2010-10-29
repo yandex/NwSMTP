@@ -277,7 +277,7 @@ void black_box_parser::end_element(const char* _name)
     }
     else if (nm == "error")
     {
-        m_has_exception = !(m_collect_chars == "OK");
+//        m_has_exception = !((m_collect_chars == "OK") || (m_collect_chars == "INVALID")); 
         m_error_name = m_collect_chars;
     }
     else if (nm == "status")

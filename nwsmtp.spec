@@ -5,7 +5,7 @@
 
 Name:		nwsmtp
 Version:	1.1
-Release:	0
+Release:	0%{?dist}
 
 Summary:	nwsmtp
 Group:          System Environment/Daemons
@@ -41,7 +41,7 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 
 %prep
-%{configure} --with-boost-libdir=%{_libdir} --with-blackbox --with-pa
+%{configure} --with-boost-libdir=%{_libdir} --enable-blackbox --with-pa --with-hostsearch
 %{__make} clean
 
 

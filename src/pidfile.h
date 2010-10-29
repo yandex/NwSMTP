@@ -5,7 +5,7 @@
 
 struct pid_file
 {
-    bool create(const std::string _file_name);
+    bool create(const std::string& _file_name);
 
     bool unlink();
     

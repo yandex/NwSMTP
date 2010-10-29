@@ -150,12 +150,12 @@ void smtp_connection::handle_bb_auth_result_helper(check::chk_status _status)
     {
         case check::CHK_ACCEPT:
             authenticated_ = true;
-            response_stream << "235 2.7.0 Authentication successful\r\n";
+            response_stream << "235 2.7.0 Authentication successful.\r\n";
             break;
                 
         case check::CHK_DISCARD:                
         case check::CHK_REJECT:
-            response_stream << "535 5.7.8 Error: authentication failed: Invalid user or password !\r\n";
+            response_stream << "535 5.7.8 Error: authentication failed: Invalid user or password!\r\n";
             break;
             
         case check::CHK_TEMPFAIL:

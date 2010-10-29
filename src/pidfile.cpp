@@ -8,7 +8,7 @@
 
 pid_file g_pid_file;
 
-bool pid_file::create(const std::string _file_name)
+bool pid_file::create(const std::string& _file_name)
 {
 
     if (_file_name.empty())

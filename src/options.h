@@ -9,6 +9,10 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/unordered_set.hpp>
 
+#if defined(HAVE_CONFIG_H)
+#include "../config.h"
+#endif
+
 struct uid_value
 {
   public:
@@ -61,9 +65,11 @@ struct server_parameters
     
     remote_point m_bb_primary_host;
     remote_point m_bb_secondary_host;
-    
+
+#if defined(HAVE_HOSTSEARCH_HOSTSEARCH_H)    
     std::string m_bb_file_path;
     int m_bb_port;
+#endif
     
     std::string m_aliases_file;
 
@@ -80,8 +86,10 @@ struct server_parameters
     remote_point m_so_primary_host;
     remote_point m_so_secondary_host;
     
+#if defined(HAVE_HOSTSEARCH_HOSTSEARCH_H)
     int m_so_port;
     std::string m_so_file_path;
+#endif    
     
     // AV
 

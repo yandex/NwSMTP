@@ -52,9 +52,9 @@ boost::asio::ip::tcp::socket& smtp_connection::socket()
 
 void smtp_connection::start()
 {
-    #if defined(HAVE_PA_INTERFACE_H)
+#if defined(HAVE_PA_INTERFACE_H)
     m_pa_timer.start();
-    #endif
+#endif
     
     m_connected_ip = socket().remote_endpoint().address();
     
@@ -768,9 +768,9 @@ void smtp_connection::end_check_data()
     
     response_stream << " " << m_session_id << "-" <<  m_envelope->m_id << "\r\n";
 
-    #if defined(HAVE_PA_INTERFACE_H)
+#if defined(HAVE_PA_INTERFACE_H)
     pa::wmi_profiler::add(pa::smtp_client, m_remote_host_name, "smtp_client_session", m_session_id + "-" + m_envelope->m_id, m_pa_timer.stop()); 
-    #endif
+#endif
 
     if (ssl_state_ == ssl_active)
     {
@@ -998,7 +998,7 @@ bool smtp_connection::smtp_ehlo( const std::string& _cmd, std::ostream &_respons
 #if ENABLE_AUTH_BLACKBOX
     if (g_config.m_use_auth)
     {
-        esmtp_flags += "250-AUTH PLAIN\r\n";
+        esmtp_flags += "250-AUTH " + auth_.get_methods() + "\r\n";
     }
 #endif // ENABLE_AUTH_BLACKBOX
     

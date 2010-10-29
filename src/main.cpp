@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
     g_log.initlog("nwsmtp", 9999);
     boost::thread log(boost::bind(&logger::run, &g_log));
     
+#if defined(HAVE_HOSTSEARCH_HOSTSEARCH_H)    
     if (g_config.m_so_check && !g_config.m_so_file_path.empty())
     {
         g_log.msg(MSG_NORMAL,str(boost::format("Primary SO host: host='%1%:%2%'") % g_config.m_so_primary_host.m_host_name % g_config.m_so_primary_host.m_port));
@@ -44,6 +45,7 @@ int main(int argc, char* argv[])
     {
         g_log.msg(MSG_NORMAL,str(boost::format("Primary black_box host: host='%1%:%2%%3%'") % g_config.m_bb_primary_host.m_host_name % g_config.m_bb_primary_host.m_port % g_config.m_bb_primary_host.m_url));
     }   
+#endif    
     
     try
     {
