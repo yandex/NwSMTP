@@ -283,9 +283,9 @@ bool server_parameters::parse_config(int _argc, char* _argv[], std::ostream& _ou
 
                 ("smtp_banner", boost::program_options::value<std::string>(&m_smtp_banner), "smtp banner")
                 ("workers", boost::program_options::value<unsigned int>(&m_worker_count), "workers count")
-                ("rbl_check", boost::program_options::value<bool>(&m_rbl_active), "RBL active ?")
+                ("rbl_check", boost::program_options::value<bool>(&m_rbl_active)->default_value(false), "RBL active ?")
                 ("rbl_hosts", boost::program_options::value<std::string>(&m_rbl_hosts), "RBL hosts list")
-                ("debug", boost::program_options::value<unsigned int>(&m_debug_level), "debug level")
+                ("debug", boost::program_options::value<unsigned int>(&m_debug_level)->default_value(0), "debug level")
                               
                 ("bb_primary", boost::program_options::value<remote_point>(&m_bb_primary_host), "blackbox host")
                 ("bb_secondary", boost::program_options::value<remote_point>(&m_bb_secondary_host), "blackbox secondary")
@@ -336,9 +336,9 @@ bool server_parameters::parse_config(int _argc, char* _argv[], std::ostream& _ou
                 ("local_relay_host", boost::program_options::value<remote_point>(&m_local_relay_host), "local relay")   
                 ("use_local_relay", boost::program_options::value<bool>(&m_use_local_relay), "use local relay ?")
               
-                ("so_check", boost::program_options::value<bool>(&m_so_check)->default_value(true), "SO on/off")
-                ("av_check", boost::program_options::value<bool>(&m_av_check)->default_value(true), "antivirus on/off")
-                ("bb_check", boost::program_options::value<bool>(&m_bb_check)->default_value(true), "blackbox on/off")
+                ("so_check", boost::program_options::value<bool>(&m_so_check)->default_value(false), "SO on/off")
+                ("av_check", boost::program_options::value<bool>(&m_av_check)->default_value(false), "antivirus on/off")
+                ("bb_check", boost::program_options::value<bool>(&m_bb_check)->default_value(false), "blackbox on/off")
               
                 ("so_try", boost::program_options::value<unsigned int>(&m_so_try)->default_value(3), "SO try")
                 ("av_try", boost::program_options::value<unsigned int>(&m_av_try)->default_value(3), "antivirus try")
@@ -348,13 +348,13 @@ bool server_parameters::parse_config(int _argc, char* _argv[], std::ostream& _ou
                 ("rc_port", boost::program_options::value<int>(&m_rc_port)->default_value(8888), "rc port")
                 ("rc_timeout", boost::program_options::value<int>(&m_rc_timeout)->default_value(1), "rc timeout in secs")
                 ("rc_verbose", boost::program_options::value<int>(&m_rc_verbose)->default_value(0), "rc verbose on/off")
-                ("rc_check", boost::program_options::value<int>(&m_rc_check)->default_value(1), "rc on/off")
+                ("rc_check", boost::program_options::value<int>(&m_rc_check)->default_value(0), "rc on/off")
               
                 ("action_virus", boost::program_options::value<int>(&m_action_virus)->default_value(1), "action_virus 0-discard 1-reject")
               
                 ("message_size_limit", boost::program_options::value<unsigned int>(&m_message_size_limit)->default_value(10240000), "Message size limit")
 
-                ("remove_headers", boost::program_options::value<bool>(&m_remove_headers)->default_value(1), "Remove headers on/off")
+                ("remove_headers", boost::program_options::value<bool>(&m_remove_headers)->default_value(false), "Remove headers on/off")
                 ("remove_headers_list", boost::program_options::value<std::string>(&m_remove_headers_list), "List of headers to remove")
       
                 ("ip_config_file", boost::program_options::value<std::string>(&m_ip_config_file), "IP address depended config params")
