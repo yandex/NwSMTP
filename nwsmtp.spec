@@ -92,6 +92,7 @@ exit 0
 %attr(0644,root,root) %{_sysconfdir}/nwsmtp/nwsmtp.conf
 %attr(0644,root,root) %{_sysconfdir}/nwsmtp/remove_headers.conf
 %attr(0644,root,root) %{_sysconfdir}/nwsmtp/ip_param.conf
+%attr(0644,root,root) %{_sysconfdir}/nwsmtp/virtual_alias_maps
 %attr(0755,root,root) %{_sbindir}/nwsmtp
 %attr(0755,root,root) %{_initrddir}/nwsmtp
 %attr(0644,root,root) %{_sysconfdir}/sysconfig/nwsmtp
