@@ -28,11 +28,11 @@ using namespace std;
 using namespace y::net;
 
 typedef pair<string, ns_type> lookup_key;
-struct dns_data 
+struct dns_data
 {
     typedef boost::unordered_map<lookup_key, boost::shared_ptr<SPF_dns_rr_t> > hash_t;
     hash_t hash;
-    boost::mutex mutex;    
+    boost::mutex mutex;
 };
 
 inline SPF_dns_rr_t* clone_SPF_dns_rr(boost::shared_ptr<SPF_dns_rr_t> rr)
@@ -46,14 +46,14 @@ inline dns_data* get_dns_data(SPF_dns_server_t* d)
 {   return static_cast<dns_data*>(d->hook);    }
 
 inline void insert_dns_data(SPF_dns_server_t* d, boost::shared_ptr<SPF_dns_rr_t> rr)
-{    
+{
     dns_data* dd =  get_dns_data(d);
     boost::mutex::scoped_lock lock(dd->mutex);
-    dd->hash.insert(dns_data::hash_t::value_type(lookup_key(rr->domain, rr->rr_type), rr));  
+    dd->hash.insert(dns_data::hash_t::value_type(lookup_key(rr->domain, rr->rr_type), rr));
 }
 
 inline bool has_dns_data(SPF_dns_server_t* d, const string& domain, ns_type t)
-{  
+{
     dns_data* dd =  get_dns_data(d);
     boost::mutex::scoped_lock lock(dd->mutex);
     return dd->hash.find(lookup_key(domain, t)) != dd->hash.end();
@@ -102,10 +102,10 @@ boost::shared_ptr<SPF_dns_rr_t> create_spf_dns_txt_rr(SPF_dns_server_t* d, const
 {
     SPF_dns_rr_t* rr = SPF_dns_rr_new_init(d, domain.c_str(), ns_t_txt, 0, 0);
     if (!rr)
-        return boost::shared_ptr<SPF_dns_rr_t>();    
+        return boost::shared_ptr<SPF_dns_rr_t>();
     SPF_dns_rr_buf_realloc(rr, 0, text.size()+1);
     strcpy(rr->rr[0]->txt, text.c_str());
-    rr->num_rr++;    
+    rr->num_rr++;
     return boost::shared_ptr<SPF_dns_rr_t>(rr, SPF_dns_rr_free);
 }
 
@@ -113,11 +113,11 @@ boost::shared_ptr<SPF_dns_rr_t> create_spf_dns_ptr_rr(SPF_dns_server_t* d, const
 {
     SPF_dns_rr_t* rr = SPF_dns_rr_new_init(d, domain.c_str(), ns_t_ptr, 0, 0);
     if (!rr)
-        return boost::shared_ptr<SPF_dns_rr_t>();    
+        return boost::shared_ptr<SPF_dns_rr_t>();
     int i=0;
     for ( ; it != dns::resolver::iterator() ; ++it, ++i)
     {
-        boost::shared_ptr<dns::ptr_resource> pr = boost::dynamic_pointer_cast<dns::ptr_resource>(*it);  
+        boost::shared_ptr<dns::ptr_resource> pr = boost::dynamic_pointer_cast<dns::ptr_resource>(*it);
         SPF_dns_rr_buf_realloc(rr, i, pr->pointer().size()+1);
         strcpy(rr->rr[i]->txt, pr->pointer().c_str());
         rr->num_rr++;
@@ -129,11 +129,11 @@ boost::shared_ptr<SPF_dns_rr_t> create_spf_dns_mx_rr(SPF_dns_server_t* d, const 
 {
     SPF_dns_rr_t* rr = SPF_dns_rr_new_init(d, domain.c_str(), ns_t_mx, 0, 0);
     if (!rr)
-        return boost::shared_ptr<SPF_dns_rr_t>();    
+        return boost::shared_ptr<SPF_dns_rr_t>();
     int i=0;
     for ( ; it != dns::resolver::iterator() ; ++it, ++i)
     {
-        boost::shared_ptr<dns::mx_resource> mr = boost::dynamic_pointer_cast<dns::mx_resource>(*it);    
+        boost::shared_ptr<dns::mx_resource> mr = boost::dynamic_pointer_cast<dns::mx_resource>(*it);
         SPF_dns_rr_buf_realloc(rr, i, mr->exchange().size()+1);
         strcpy(rr->rr[i]->mx, mr->exchange().c_str());
         rr->num_rr++;
@@ -145,11 +145,11 @@ boost::shared_ptr<SPF_dns_rr_t> create_spf_dns_a_rr(SPF_dns_server_t* d, const s
 {
     SPF_dns_rr_t* rr = SPF_dns_rr_new_init(d, domain.c_str(), ns_t_a, 0, 0);
     if (!rr)
-        return boost::shared_ptr<SPF_dns_rr_t>();    
+        return boost::shared_ptr<SPF_dns_rr_t>();
     int i=0;
     for ( ; it != dns::resolver::iterator() ; ++it, ++i)
     {
-        boost::shared_ptr<dns::a_resource> ar = boost::dynamic_pointer_cast<dns::a_resource>(*it);      
+        boost::shared_ptr<dns::a_resource> ar = boost::dynamic_pointer_cast<dns::a_resource>(*it);
         SPF_dns_rr_buf_realloc(rr, i, ar->address().to_string().size()+1);
         inet_pton( AF_INET, ar->address().to_string().c_str(), &rr->rr[i]->a);
         rr->num_rr++;
@@ -260,24 +260,24 @@ class yscoped_ptr : private boost::noncopyable
 };
 
 struct collect_shared_state : private boost::noncopyable
-{ 
-    collect_shared_state(boost::asio::io_service& ios, SPF_server_t* srv_ = 0, 
+{
+    collect_shared_state(boost::asio::io_service& ios, SPF_server_t* srv_ = 0,
             SPF_dns_server_t* dns_ = 0, SPF_request_t* req_ = 0)
-            : srv(srv_), dns(dns_), req(req_), 
-              r(ios), 
-              inprogress(0), 
-              done(false)         
+            : srv(srv_), dns(dns_), req(req_),
+              r(ios),
+              inprogress(0),
+              done(false)
     {
     }
 
     ~collect_shared_state()
     {
         if (req)
-            SPF_request_free(req);      
+            SPF_request_free(req);
         if (dns)
             free_spf_dns_resolver(dns);
         if (srv)
-            SPF_server_free(srv);       
+            SPF_server_free(srv);
     }
 
     SPF_server_t* srv;
@@ -302,18 +302,18 @@ struct collect_state
 
 template <class Handle>
 inline void handle_partial_collect_spf_dns_data(collect_state st, Handle handle)
-{    
+{
     if (! --st.shared_state->inprogress)
         handle(st);
 }
 
 template <class Handle>
-void handle_resolve_txt_exp(const boost::system::error_code& ec, dns::resolver::iterator it, 
+void handle_resolve_txt_exp(const boost::system::error_code& ec, dns::resolver::iterator it,
         collect_state st, Handle handle)
 {
     if (ec == boost::asio::error::operation_aborted || st.shared_state->done)
         return;
-    
+
     if (!ec)
     {
         boost::shared_ptr<dns::txt_resource> tr = boost::dynamic_pointer_cast<dns::txt_resource>(*it);
@@ -326,7 +326,7 @@ void handle_resolve_txt_exp(const boost::system::error_code& ec, dns::resolver::
 }
 
 template <class Handle>
-void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iterator it, 
+void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iterator it,
         collect_state st, Handle handle)
 {
     if (ec == boost::asio::error::operation_aborted || st.shared_state->done)
@@ -337,13 +337,14 @@ void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iter
         SPF_errcode_t err = SPF_E_SUCCESS;
         SPF_record_t* r = 0;
         yscoped_ptr<SPF_record_t> r_guard(0, SPF_record_free);
-        yscoped_ptr<SPF_response_t> spf_res(SPF_response_new(st.shared_state->req), SPF_response_free);
+        yscoped_ptr<SPF_response_t> spf_res(0, SPF_response_free);
 
         for (; it != dns::resolver::iterator(); ++it)
         {
-            boost::shared_ptr<dns::txt_resource> tr = boost::dynamic_pointer_cast<dns::txt_resource>(*it);      
+            boost::shared_ptr<dns::txt_resource> tr = boost::dynamic_pointer_cast<dns::txt_resource>(*it);
             r_guard.reset(0);
             r = 0;
+            spf_res.reset(SPF_response_new(st.shared_state->req));
             err = SPF_record_compile(st.shared_state->srv, spf_res.get(), &r, tr->text().c_str());
             r_guard.reset(r);
             if (err == SPF_E_SUCCESS)
@@ -359,7 +360,7 @@ void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iter
                 if (err)
                     err = SPF_record_find_mod_value(st.shared_state->srv, st.shared_state->req,
                             spf_res.get(), r,
-                            "exp", &buf, &buf_len);             
+                            "exp", &buf, &buf_len);
                 yscoped_ptr<char> buf_guard(buf, free);
                 if (err == SPF_E_SUCCESS)
                 {
@@ -387,12 +388,12 @@ void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iter
             data = SPF_mech_data(mech);
             data_end = SPF_mech_end_data(mech);
             switch (mech->mech_type) {
-                case MECH_A:            
+                case MECH_A:
                     if (data < data_end && data->dc.parm_type == PARM_CIDR)
                         data = SPF_data_next(data);
                     if (data == data_end)
                         lookup = st.cur_dom.c_str();
-                    else 
+                    else
                     {
                         buf_guard.release();
                         err = SPF_record_expand_data(st.shared_state->srv,
@@ -405,15 +406,15 @@ void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iter
                     if (err)
                         break;
 
-                    collect_spf_dns_data_a(collect_state(st.shared_state, lookup), handle);                             
+                    collect_spf_dns_data_a(collect_state(st.shared_state, lookup), handle);
                     break;
 
-                case MECH_MX:           
+                case MECH_MX:
                     if (data < data_end && data->dc.parm_type == PARM_CIDR)
                         data = SPF_data_next(data);
                     if (data == data_end)
                         lookup = st.cur_dom.c_str();
-                    else 
+                    else
                     {
                         buf_guard.release();
                         err = SPF_record_expand_data(st.shared_state->srv,
@@ -426,17 +427,17 @@ void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iter
                     if (err)
                         break;
 
-                    collect_spf_dns_data_mx(collect_state(st.shared_state, lookup), handle);        
+                    collect_spf_dns_data_mx(collect_state(st.shared_state, lookup), handle);
                     break;
 
-                case MECH_PTR: 
+                case MECH_PTR:
                     {
                         typedef boost::asio::ip::address_v4::bytes_type bytes_type;
                         bytes_type ipv4;
                         memcpy(&ipv4.elems, reinterpret_cast<typename bytes_type::value_type*>(&st.shared_state->req->ipv4.s_addr), 4);
-                        collect_spf_dns_data_ptr(collect_state(st.shared_state, 
-                                        rev_order_av4_str(boost::asio::ip::address_v4(ipv4), 
-                                                "in-addr.arpa")), 
+                        collect_spf_dns_data_ptr(collect_state(st.shared_state,
+                                        rev_order_av4_str(boost::asio::ip::address_v4(ipv4),
+                                                "in-addr.arpa")),
                                 handle);
                     }
                     break;
@@ -450,18 +451,18 @@ void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iter
                             &buf, &buf_len );
                     buf_guard.reset(buf);
                     if (err)
-                        break;          
-                        
+                        break;
+
                     if (has_dns_data(st.shared_state->dns, buf, ns_t_txt)) // see if we go in circles
                     {
                         err = SPF_E_RECURSIVE;
                         break;
-                    }           
+                    }
 
-                    collect_spf_dns_data_redirect(collect_state(st.shared_state, buf), handle);         
+                    collect_spf_dns_data_redirect(collect_state(st.shared_state, buf), handle);
                     break;
 
-                case MECH_EXISTS:               
+                case MECH_EXISTS:
                     buf_guard.release();
                     err = SPF_record_expand_data(st.shared_state->srv,
                             st.shared_state->req, spf_res.get(),
@@ -471,7 +472,7 @@ void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iter
                     if (err)
                         break;
 
-                    collect_spf_dns_data_a(collect_state(st.shared_state, buf), handle);                    
+                    collect_spf_dns_data_a(collect_state(st.shared_state, buf), handle);
                     break;
 
                 default:
@@ -480,10 +481,10 @@ void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iter
             if (err)
                 break;
         }
-        
+
         if (err)
             break;
-        
+
         handle_partial_collect_spf_dns_data(st, handle);
         return;
     }
@@ -492,7 +493,7 @@ void handle_resolve_txt(const boost::system::error_code& ec, dns::resolver::iter
 }
 
 template <class Handle>
-void handle_resolve_a(const boost::system::error_code& ec, dns::resolver::iterator it, 
+void handle_resolve_a(const boost::system::error_code& ec, dns::resolver::iterator it,
         collect_state st, Handle handle)
 {
     if (ec == boost::asio::error::operation_aborted || st.shared_state->done)
@@ -503,7 +504,7 @@ void handle_resolve_a(const boost::system::error_code& ec, dns::resolver::iterat
 
     if (!ec)
     {
-        boost::shared_ptr<dns::a_resource> ar = boost::dynamic_pointer_cast<dns::a_resource>(*it);      
+        boost::shared_ptr<dns::a_resource> ar = boost::dynamic_pointer_cast<dns::a_resource>(*it);
         handle_partial_collect_spf_dns_data(st, handle);
         return;
     }
@@ -527,7 +528,7 @@ void collect_spf_dns_data_a(collect_state st, Handle handle)
 }
 
 template <class Handle>
-void handle_resolve_mx(const boost::system::error_code& ec, dns::resolver::iterator it, 
+void handle_resolve_mx(const boost::system::error_code& ec, dns::resolver::iterator it,
         collect_state st, Handle handle)
 {
     if (ec == boost::asio::error::operation_aborted || st.shared_state->done)
@@ -540,7 +541,7 @@ void handle_resolve_mx(const boost::system::error_code& ec, dns::resolver::itera
     {
         for( ; it != dns::resolver::iterator(); ++it)
         {
-            boost::shared_ptr<dns::mx_resource> mr = boost::dynamic_pointer_cast<dns::mx_resource>(*it);        
+            boost::shared_ptr<dns::mx_resource> mr = boost::dynamic_pointer_cast<dns::mx_resource>(*it);
             collect_spf_dns_data_a(collect_state(st.shared_state, mr->exchange()), handle);
         }
         handle_partial_collect_spf_dns_data(st, handle);
@@ -566,7 +567,7 @@ void collect_spf_dns_data_mx(collect_state st, Handle handle)
 }
 
 template <class Handle>
-void handle_resolve_ptr(const boost::system::error_code& ec, dns::resolver::iterator it, 
+void handle_resolve_ptr(const boost::system::error_code& ec, dns::resolver::iterator it,
         collect_state st, Handle handle)
 {
     if (ec == boost::asio::error::operation_aborted || st.shared_state->done)
@@ -579,7 +580,7 @@ void handle_resolve_ptr(const boost::system::error_code& ec, dns::resolver::iter
     {
         for( ; it != dns::resolver::iterator(); ++it)
         {
-            boost::shared_ptr<dns::ptr_resource> pr = boost::dynamic_pointer_cast<dns::ptr_resource>(*it);      
+            boost::shared_ptr<dns::ptr_resource> pr = boost::dynamic_pointer_cast<dns::ptr_resource>(*it);
             collect_spf_dns_data_a(collect_state(st.shared_state, pr->pointer()), handle);
         }
         handle_partial_collect_spf_dns_data(st, handle);
@@ -608,18 +609,18 @@ void collect_spf_dns_data_exp(collect_state st, Handle handle)
 {
     st.shared_state->inprogress++;
     if (!st.cur_dom.empty())
-    {           
+    {
         boost::mutex::scoped_lock lock(st.shared_state->mux);
         st.shared_state->r.async_resolve(
             st.cur_dom,
-            dns::type_txt, 
+            dns::type_txt,
             boost::bind(handle_resolve_txt_exp<Handle>,
                     boost::asio::placeholders::error,
                     boost::asio::placeholders::iterator,
                     st,
                     handle)
-            );      
-    }    
+            );
+    }
     else
     {
         handle_partial_collect_spf_dns_data(collect_state(st.shared_state, st.cur_dom, true), handle);
@@ -631,18 +632,18 @@ void collect_spf_dns_data_redirect(collect_state st, Handle handle)
 {
     st.shared_state->inprogress++;
     if (!st.cur_dom.empty())
-    {           
+    {
         boost::mutex::scoped_lock lock(st.shared_state->mux);
         st.shared_state->r.async_resolve(
             st.cur_dom,
-            dns::type_txt, 
+            dns::type_txt,
             boost::bind(handle_resolve_txt<Handle>,
                     boost::asio::placeholders::error,
                     boost::asio::placeholders::iterator,
                     st,
                     handle)
-            );      
-    }    
+            );
+    }
     else
     {
         handle_partial_collect_spf_dns_data(collect_state(st.shared_state, st.cur_dom, true), handle);
@@ -656,13 +657,13 @@ void continue_spf_check(collect_state st, Handle handle)
     SPF_request_query_mailfrom(st.shared_state->req, &res);
 
     yscoped_ptr<SPF_response_t> spf_res(res, SPF_response_free);
-   
+
     boost::optional<string> result;
     boost::optional<string> expl;
 
     if (SPF_RESULT_NONE != SPF_response_result(res))
     {
-        const char* str = SPF_response_get_header_comment(res); 
+        const char* str = SPF_response_get_header_comment(res);
         if (str)
             expl = boost::optional<string>(str);
         SPF_result_t spf = SPF_response_result(res);
@@ -686,8 +687,8 @@ collect_state create_init_collect_state(boost::asio::io_service& ios, const spf_
         sst->dns = create_spf_dns_resolver(NULL, 0);
         sst->srv = SPF_server_new_dns(sst->dns, 0);
         sst->req = SPF_request_new(sst->srv);
-        return collect_state(sst, p.domain, false);     
-    } 
+        return collect_state(sst, p.domain, false);
+    }
     catch (...)
     {
     }
@@ -698,10 +699,10 @@ collect_state create_init_collect_state(boost::asio::io_service& ios, const spf_
 inline bool sanitize_spf_parameters(spf_parameters& p)
 {
     string name, domain;
-    if (!p.from.empty() && parse_email(p.from, name, domain))    
-        p.domain = domain;        
+    if (!p.from.empty() && parse_email(p.from, name, domain))
+        p.domain = domain;
     else if (p.from.empty() && p.domain.empty())
-        return false;    
+        return false;
     if (p.ip.empty())
         return false;
     return true;
@@ -711,7 +712,7 @@ inline bool sanitize_spf_parameters(spf_parameters& p)
 
 template <class Handle>
 void async_check_SPF(boost::asio::io_service& ios, const spf_parameters& pp, Handle handle)
-{    
+{
     spf_parameters p = pp;
     if ( !impl::sanitize_spf_parameters(p) ) // cosher input?
     {
@@ -731,9 +732,9 @@ void async_check_SPF(boost::asio::io_service& ios, const spf_parameters& pp, Han
     if ( err != impl::SPF_E_SUCCESS)
         return;
 
-    collect_spf_dns_data_redirect(st, 
+    collect_spf_dns_data_redirect(st,
             boost::protect(
-                boost::bind(impl::continue_spf_check<Handle>, _1, handle)            
+                boost::bind(impl::continue_spf_check<Handle>, _1, handle)
                 )
                                   );
 }
@@ -743,7 +744,7 @@ struct spf_check::spf_check_impl
     boost::shared_ptr<impl::collect_shared_state> shared_state;
 };
 
-spf_check::spf_check()    
+spf_check::spf_check()
 {
 }
 
@@ -761,7 +762,7 @@ void spf_check::start(boost::asio::io_service& ios, const spf_parameters& pp, Ha
     impl::collect_state st = impl::create_init_collect_state(ios, p);
     if (st.err)
     {
-        handler(boost::optional<string>(), boost::optional<string>());  
+        handler(boost::optional<string>(), boost::optional<string>());
         return;
     }
 
@@ -778,7 +779,7 @@ void spf_check::start(boost::asio::io_service& ios, const spf_parameters& pp, Ha
 
     impl_->shared_state = st.shared_state;
 
-    collect_spf_dns_data_redirect(st, 
+    collect_spf_dns_data_redirect(st,
             boost::protect(
                 boost::bind(impl::continue_spf_check<Handler>, _1, handler)));
 }

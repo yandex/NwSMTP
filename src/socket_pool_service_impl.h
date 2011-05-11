@@ -16,15 +16,15 @@ using namespace boost;
 using namespace boost::asio;
 
 template <class Protocol, class Settings>
-class socket_pool_service                       
+class socket_pool_service
         : public boost::asio::detail::service_base<socket_pool_service<Protocol, Settings> >
-{                               
+{
     struct wrapped_socket;
 
   public:
     typedef Protocol protocol_type;
     typedef typename Protocol::endpoint endpoint_type;
-    typedef basic_stream_socket<Protocol> native_type;    
+    typedef basic_stream_socket<Protocol> native_type;
     typedef shared_ptr<wrapped_socket> implementation_type;
 
   private:
@@ -57,7 +57,7 @@ class socket_pool_service
 
         boost::shared_ptr<wrapped_socket> next_;
         boost::weak_ptr<wrapped_socket> prev_;
-        basic_stream_socket<Protocol> socket_;   
+        basic_stream_socket<Protocol> socket_;
         optional<endpoint_type> key_; // null if socket is not managed
         bool free_; // if the socket is managed and free_ then it is available for reuse
         time_t tm_; // connection start time
@@ -66,7 +66,7 @@ class socket_pool_service
 
     struct socket_queue // erasable queue
     {
-        socket_queue() 
+        socket_queue()
                 : sz_(0)
         {}
         size_t sz_;
@@ -82,7 +82,7 @@ class socket_pool_service
             implementation_type p = top_;
             int i = sz_;
             // check forward traversal
-            while (p != bottom_ && i-- > 0)         
+            while (p != bottom_ && i-- > 0)
                 p = p->next_;
             if (p != bottom_)
                 return false;
@@ -106,9 +106,9 @@ class socket_pool_service
         {   return sz_; }
 
         void pop()
-        {           
+        {
             if (--sz_ == 0)
-            {           
+            {
                 top_.reset();
                 bottom_.reset();
                 return;
@@ -202,16 +202,16 @@ class socket_pool_service
     }
 
     void destroy(implementation_type& impl)
-    {   
+    {
         asio::detail::mutex::scoped_lock lock(mutex_);
         if (!impl)
             return;
 
         boost::system::error_code ec;
-        if (impl->key_)         
-            do_close(impl, ec); 
-        else    
-            impl.reset();       
+        if (impl->key_)
+            do_close(impl, ec);
+        else
+            impl.reset();
     }
 
     void cancel(implementation_type& impl)
@@ -225,8 +225,8 @@ class socket_pool_service
     bool is_open(const implementation_type& impl) const
     {
         asio::detail::mutex::scoped_lock lock(mutex_);
-        if (!impl)      
-            return false;       
+        if (!impl)
+            return false;
         if (impl->is_managed())
         {
             assert (impl->socket_.is_open()); // ###
@@ -282,38 +282,38 @@ class socket_pool_service
     template <typename ConnectHandler>
     void async_connect(implementation_type& impl,
             const endpoint_type& endpoint, ConnectHandler handler)
-    {  
+    {
         time_t now = time(0);
         asio::detail::mutex::scoped_lock lock(mutex_);
         if (impl && impl->is_managed()) // already in the pool?
-        {           
-            assert(!impl->free_);          
+        {
+            assert(!impl->free_);
             if (now < impl->tm_ + Settings::ttl(*impl->key_))
             {
                 lock.unlock();
 
                 // dispatch the handler
-                io_service_impl_.dispatch(asio::detail::bind_handler(handler, 
+                io_service_impl_.dispatch(asio::detail::bind_handler(handler,
                                 boost::system::error_code()));
                 return;
             }
-                    
+
             // time to reconnect
             try {
                 impl->socket_.close();
             } catch (...) {}
-            impl->tm_ = now;          
+            impl->tm_ = now;
 
             // schedule async_connect on the wrapped socket
             impl->tm_ = now;
             lock.unlock();
             impl->socket_.async_connect(endpoint, handler);
 
-            return;                 
+            return;
         }
 
-        std::pair<typename socket_map::iterator, bool> v = 
-                socket_map_.insert(typename socket_map::value_type(endpoint, 
+        std::pair<typename socket_map::iterator, bool> v =
+                socket_map_.insert(typename socket_map::value_type(endpoint,
                                 socket_queue_pair()));
         socket_queue_pair& p = (v.first)->second;
         socket_queue& free_q = p.first;
@@ -340,7 +340,7 @@ class socket_pool_service
 
                 return;
             }
-        } 
+        }
         else if (!free_q.empty()) // any free sockets for this endpoint?
         {
             // mark the socket used
@@ -348,11 +348,11 @@ class socket_pool_service
             free_q.pop();
             //      assert(free_q.validate()); // ###
             impl->free_ = false;
-            used_q.push(impl);  
+            used_q.push(impl);
             //      assert(used_q.validate()); // ###
             // dispatch the handler
             lock.unlock();
-            io_service_impl_.dispatch(asio::detail::bind_handler(handler, 
+            io_service_impl_.dispatch(asio::detail::bind_handler(handler,
                             boost::system::error_code()));
             return;
         }
@@ -366,7 +366,7 @@ class socket_pool_service
             lock.unlock();
             // the wrapped socket will remain unmanaged; schedule async_connect on it
             impl->socket_.async_connect(endpoint, handler);
-            return;                 
+            return;
         }
 
         if (!impl)
@@ -375,7 +375,7 @@ class socket_pool_service
         // make the socket managed
         impl->key_ = endpoint;
         impl->free_ = false;
-        used_q.push(impl);      
+        used_q.push(impl);
 
         //      assert(used_q.validate()); // ###
         // schedule async_connect on the wrapped socket
@@ -410,7 +410,7 @@ class socket_pool_service
         asio::detail::mutex::scoped_lock lock(mutex_);
         if (impl && !impl->is_managed())
             return impl->socket_.shutdown(what, ec);
-            
+
         return ec = boost::system::error_code();
     }
 
@@ -420,17 +420,17 @@ class socket_pool_service
         socket_pool_service& service;
         implementation_type& impl;
         const ConstBufferSequence& buffers;
-        socket_base::message_flags flags; 
+        socket_base::message_flags flags;
         WriteHandler handler;
 
         void operator()(const boost::system::error_code& ec, size_t sz)
-        {           
+        {
             if (ec == boost::asio::error::broken_pipe)
             {
                 // connection broken; remove it from the pool
                 assert(!impl->free_);
                 asio::detail::mutex::scoped_lock lock(service.mutex_);
-                typename socket_pool_service::socket_map::iterator v = 
+                typename socket_pool_service::socket_map::iterator v =
                         service.socket_map_.find(impl->key_.get());
                 typename socket_pool_service::socket_queue_pair& p = (v->second);
                 typename socket_pool_service::socket_queue& used_q = p.second;
@@ -447,17 +447,17 @@ class socket_pool_service
         socket_pool_service& service;
         implementation_type& impl;
         const MutableBufferSequence& buffers;
-        socket_base::message_flags flags; 
+        socket_base::message_flags flags;
         ReadHandler handler;
 
         void operator()(const boost::system::error_code& ec, size_t sz)
-        {           
+        {
             if (ec == boost::asio::error::eof)
             {
                 // connection broken; remove it from the pool
                 assert(!impl->free_);
                 asio::detail::mutex::scoped_lock lock(service.mutex_);
-                typename socket_pool_service::socket_map::iterator v = 
+                typename socket_pool_service::socket_map::iterator v =
                         service.socket_map_.find(impl->key_.get());
                 typename socket_pool_service::socket_queue_pair& p = (v->second);
                 typename socket_pool_service::socket_queue& used_q = p.second;
@@ -476,14 +476,14 @@ class socket_pool_service
         asio::detail::mutex::scoped_lock lock(mutex_);
         if (!impl)
         {
-            io_service_impl_.dispatch(asio::detail::bind_handler(handler, 
+            io_service_impl_.dispatch(asio::detail::bind_handler(handler,
                             asio::error::not_connected, 0));
             return;
         }
 
         if (impl->is_managed())
         {
-            handle_send<ConstBufferSequence, WriteHandler> handler_wrapper = 
+            handle_send<ConstBufferSequence, WriteHandler> handler_wrapper =
                     {*this, impl, buffers, flags, handler};
             impl->socket_.async_send(buffers, flags, handler_wrapper);
         }
@@ -501,14 +501,14 @@ class socket_pool_service
         asio::detail::mutex::scoped_lock lock(mutex_);
         if (!impl)
         {
-            io_service_impl_.dispatch(boost::asio::detail::bind_handler(handler, 
+            io_service_impl_.dispatch(boost::asio::detail::bind_handler(handler,
                             asio::error::not_connected, 0));
             return;
         }
 
         if (impl->is_managed())
         {
-            handle_receive<MutableBufferSequence, ReadHandler> handler_wrapper = 
+            handle_receive<MutableBufferSequence, ReadHandler> handler_wrapper =
                     {*this, impl, buffers, flags, handler};
             impl->socket_.async_receive(buffers, flags, handler_wrapper);
         }
@@ -522,7 +522,7 @@ class socket_pool_service
     inline void do_construct(implementation_type& impl)
     {
         impl.reset(new wrapped_socket(this->get_io_service()));
-    }    
+    }
 
     boost::system::error_code do_close(implementation_type& impl,
             boost::system::error_code& ec)
@@ -547,16 +547,16 @@ class socket_pool_service
         if (time(0) < impl->tm_ + Settings::ttl(*impl->key_))
         {
             impl->free_ = true;
-            free_q.push(impl);  
+            free_q.push(impl);
         }
         else
         {
             // time to remove the socket from the pool
-            impl->key_ = optional<endpoint_type>();         
+            impl->key_ = optional<endpoint_type>();
         }
         //      assert(free_q.validate()); // ###
 
-        impl.reset();   
+        impl.reset();
         return ec = boost::system::error_code();
     }
 };

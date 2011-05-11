@@ -1,235 +1,436 @@
-#ifndef _BUFFER_ITERATOR_H_
-#define _BUFFER_ITERATOR_H_
-// original version stolen from nikki@
+#ifndef BUFFER_ITERATOR_H
+#define BUFFER_ITERATOR_H
 
-#include <boost/utility.hpp>
-#include <boost/iterator/iterator_facade.hpp>
-#include <boost/iterator/iterator_traits.hpp>
+#include <cstddef>
+#include <boost/assert.hpp>
+#include <boost/iterator.hpp>
+#include <boost/type_traits/is_convertible.hpp>
+#include <boost/type_traits/add_const.hpp>
+#include <boost/asio/buffer.hpp>
 
-template <typename Container, typename Iterator1, typename Iterator2>
-class continious_iterator
-        : public boost::iterator_facade <
-    continious_iterator <Container, Iterator1, Iterator2>
-    , typename boost::iterator_value<Iterator2>::type
-    , boost::forward_traversal_tag // XXX fixme
-    >
+namespace detail
 {
-  private:
-    struct enabler1 {};
-    struct enabler2 {};
-    struct enabler3 {};
+template <bool IsMutable>
+struct ybuffers_iterator_types_helper;
 
-    typedef Container container_t;
-    typedef Iterator1 iterator1_t;
-    typedef Iterator2 iterator2_t;
-
-    typedef boost::iterator_facade <
-        continious_iterator <Container, Iterator1, Iterator2>
-        , typename boost::iterator_value<Iterator2>::type
-        , boost::forward_traversal_tag
-        > iterator_facade_;
-
-    template <typename C> struct Hack { typedef C type; };
-    friend class Hack<Container>::type;
-
-
-    container_t* cont_;
-    iterator1_t iter1_;
-    iterator2_t iter2_;
-
-  public:
-    continious_iterator ()
-            : cont_(0)
-            , iter1_ ()
-            , iter2_ ()
-    {}
-
-    template <typename CC, typename II1, typename II2>
-    continious_iterator (
-        continious_iterator<CC,II1,II2> const& other
-        , typename boost::enable_if<
-        boost::is_convertible<CC*,Container*>
-        , enabler1
-        >::type = enabler1()
-        , typename boost::enable_if<
-        boost::is_convertible<II1*,Iterator1*>
-        , enabler2
-        >::type = enabler2()
-        , typename boost::enable_if<
-        boost::is_convertible<II2*,Iterator2*>
-        , enabler3
-        >::type = enabler3()
-        )
-            : cont_(other.cont_)
-            , iter1_ (other.iter1_)
-            , iter2_ (other.iter2_)
-    {}
-
-    typename iterator_facade_::value_type*
-    ptr () const // points to the start of the continious chunk 
+template <>
+struct ybuffers_iterator_types_helper<false>
+{
+    typedef boost::asio::const_buffer buffer_type;
+    template <typename ByteType>
+    struct byte_type
     {
-        return &*iter2_;
-    }
-
-    typename iterator_facade_::value_type*
-    ptr_end () const // points past the end of the continious chunk 
-    {
-        return &*iter2_ + (iter1_->end() - iter2_);
-    }
-
-    template <typename CC, typename II1, typename II2>
-    typename iterator_facade_::value_type*
-    ptr_end(  // points past the end of the continious chunk 
-        continious_iterator<CC,II1,II2> const& other  
-            , typename boost::enable_if<
-            boost::is_convertible<CC*,Container*>
-            , enabler1
-            >::type = enabler1()
-            , typename boost::enable_if<
-            boost::is_convertible<II1*,Iterator1*>
-            , enabler2
-            >::type = enabler2()
-            , typename boost::enable_if<
-            boost::is_convertible<II2*,Iterator2*>
-            , enabler3
-            >::type = enabler3()
-        ) const
-    {
-        iterator2_t e = (other.iter1_ == iter1_ ? other.iter2_ : iter1_->end());      
-        return &*iter2_ + (e - iter2_);
-    }
-
-  protected:
-    continious_iterator (container_t* c, iterator1_t const& i1, iterator2_t const& i2)
-            : cont_(c)
-            , iter1_ (i1)
-            , iter2_ (i2)
-    {}
-
-  private:
-    friend class boost::iterator_core_access;
-
-    template <typename CC, typename II1, typename II2>
-    typename iterator_facade_::difference_type
-    distance_to (
-        continious_iterator<CC,II1,II2> const& other
-        , typename boost::enable_if<
-        boost::is_convertible<CC*,Container*>
-        , enabler1
-        >::type = enabler1()
-        , typename boost::enable_if<
-        boost::is_convertible<II1*,Iterator1*>
-        , enabler2
-        >::type = enabler2()
-        , typename boost::enable_if<
-        boost::is_convertible<II2*,Iterator2*>
-        , enabler3
-        >::type = enabler3()
-        ) const
-    {
-        typename iterator_facade_::difference_type diff = 0;
-        iterator1_t i1, i2;
-        iterator2_t j1, j2;
-
-        i1 = other.iter1_;
-        j1 = other.iter2_;
-        i2 = iter1_;
-        j2 = iter2_;
-
-        while (i1 != i2)
-        {
-            diff += i1->end () - j1;
-            ++i1;       
-            j1 = i1->begin();
-        }
-
-        iterator1_t e1;
-        if (cont_)
-            e1 = cont_->end().iter1_;
-
-        if (i2 != e1)
-            diff += (j2 - j1);
-        assert (diff >= 0);
-        return -diff;
-    }
-
-    template <typename CC, typename II1, typename II2>
-    bool equal (
-        continious_iterator<CC,II1,II2> const& other
-        , typename boost::enable_if<
-        boost::is_convertible<CC*,Container*>
-        , enabler1
-        >::type = enabler1()
-        , typename boost::enable_if<
-        boost::is_convertible<II1*,Iterator1*>
-        , enabler2
-        >::type = enabler2()
-        , typename boost::enable_if<
-        boost::is_convertible<II2*,Iterator2*>
-        , enabler3
-        >::type = enabler3()
-        ) const
-    {
-        iterator1_t e1;
-        if (cont_)
-            e1 = cont_->end().iter1_;
-        return (iter1_ == other.iter1_) && 
-                ((iter1_ == e1) || (iter2_ == other.iter2_));
-    }
-
-    typename iterator_facade_::reference
-    dereference () const
-    {
-        return *iter2_;
-    }
-
-    void
-    increment ()
-    {
-        iterator1_t e1;
-        if (cont_)
-            e1 = cont_->end().iter1_;
-
-        do {
-            if (++iter2_ == iter1_->end() &&
-                    ++iter1_ != e1)
-            {
-                iter2_ = iter1_->begin();
-            }
-        } while ((iter1_ != e1) && 
-                (iter2_ == iter1_->end ()));
-    }
-
-    void
-    advance (typename iterator_facade_::difference_type n)
-    {
-        typename iterator_facade_::difference_type nn;
-        if (n > 0)
-        {
-            nn = iter1_->end () - iter2_;
-            if (nn > n)
-            {
-                iter2_ += n;
-                return;
-            }
-
-            n -= nn;      
-            ++iter1_;
-            iterator1_t e1;
-            if (cont_)
-                e1 = cont_->end().iter1_;
-            while ( (iter1_ != e1) && 
-                    (iter1_->end () - iter1_->begin () <= n) 
-                    )
-            {
-                n -= (iter1_->end () - iter1_->begin ());
-                ++iter1_;
-            }
-            if (iter1_ != e1)
-                iter2_ = iter1_->begin () + n;
-        } 
-    }
+        typedef typename boost::add_const<ByteType>::type type;
+    };
 };
 
+template <>
+struct ybuffers_iterator_types_helper<true>
+{
+    typedef boost::asio::mutable_buffer buffer_type;
+    template <typename ByteType>
+    struct byte_type
+    {
+        typedef ByteType type;
+    };
+};
 
-#endif //_BUFFER_ITERATOR_H_
+template <typename BufferSequence, typename ByteType>
+struct ybuffers_iterator_types
+{
+    enum
+    {
+        is_mutable = boost::is_convertible<
+        typename BufferSequence::value_type, boost::asio::mutable_buffer>::value
+    };
+    typedef ybuffers_iterator_types_helper<is_mutable> helper;
+    typedef typename helper::buffer_type buffer_type;
+    typedef typename helper::template byte_type<ByteType>::type byte_type;
+};
+}
+
+// Modified version of boost::asio::buffers_iterator that imposes an exta requirement on BufferSequence that its const_iterator be random access iterator.
+// Luckily, both boost::asio::streambuf::*_sequence_type::const_iterator and ystreambuf::*_sequence_type::const_iterator types meet this requirement.
+template <typename BufferSequence>
+class ybuffers_iterator : public boost::iterator<
+    std::random_access_iterator_tag,
+    typename ::detail::ybuffers_iterator_types<
+        BufferSequence, char>::byte_type>
+{
+  private:
+    typedef typename ::detail::ybuffers_iterator_types<
+      BufferSequence, char>::buffer_type buffer_type;
+    typedef typename ::detail::ybuffers_iterator_types<
+        BufferSequence, char>::byte_type byte_type;
+
+  public:
+    /// Default constructor. Creates an iterator in an undefined state.
+    ybuffers_iterator()
+            : current_buffer_(),
+              current_buffer_position_(0),
+              begin_(),
+              current_(),
+              end_()
+    {
+    }
+
+    /// Construct an iterator representing the beginning of the buffers' data.
+    static ybuffers_iterator begin(const BufferSequence& buffers)
+    {
+        ybuffers_iterator new_iter;
+        new_iter.begin_ = buffers.begin();
+        new_iter.current_ = buffers.begin();
+        new_iter.end_ = buffers.end();
+        while (new_iter.current_ != new_iter.end_)
+        {
+            new_iter.current_buffer_ = *new_iter.current_;
+            if (boost::asio::buffer_size(new_iter.current_buffer_) > 0)
+                break;
+            ++new_iter.current_;
+        }
+        return new_iter;
+    }
+
+    /// Construct an iterator representing the end of the buffers' data.
+    static ybuffers_iterator end(const BufferSequence& buffers)
+    {
+        ybuffers_iterator new_iter;
+        new_iter.begin_ = buffers.begin();
+        new_iter.end_ = buffers.end();
+        new_iter.current_ = new_iter.end_;
+
+//         if (new_iter.begin_ != new_iter.end_)
+//         {
+//             new_iter.current_ = new_iter.end_ - 1;
+//             new_iter.current_buffer_ = *new_iter.current_;
+//             new_iter.current_buffer_position_ = boost::asio::buffer_size(new_iter.current_buffer_);
+//         }
+//         else
+//         {
+//             new_iter.current_ = new_iter.end_;
+//         }
+        return new_iter;
+    }
+
+    /// Dereference an iterator.
+    byte_type& operator*() const
+    {
+        return dereference();
+    }
+
+    /// Dereference an iterator.
+    byte_type* operator->() const
+    {
+        return &dereference();
+    }
+
+    /// Increment operator (prefix).
+    ybuffers_iterator& operator++()
+    {
+        increment();
+        return *this;
+    }
+
+    /// Increment operator (postfix).
+    ybuffers_iterator operator++(int)
+    {
+        ybuffers_iterator tmp(*this);
+        ++*this;
+        return tmp;
+    }
+
+    /// Decrement operator (prefix).
+    ybuffers_iterator& operator--()
+    {
+        decrement();
+        return *this;
+    }
+
+    /// Decrement operator (postfix).
+    ybuffers_iterator operator--(int)
+    {
+        ybuffers_iterator tmp(*this);
+        --*this;
+        return tmp;
+    }
+
+    /// Addition operator.
+    ybuffers_iterator& operator+=(std::ptrdiff_t difference)
+    {
+        advance(difference);
+        return *this;
+    }
+
+    /// Subtraction operator.
+    ybuffers_iterator& operator-=(std::ptrdiff_t difference)
+    {
+        advance(-difference);
+        return *this;
+    }
+
+    /// Addition operator.
+    friend ybuffers_iterator operator+(const ybuffers_iterator& iter,
+            std::ptrdiff_t difference)
+    {
+        ybuffers_iterator tmp(iter);
+        tmp.advance(difference);
+        return tmp;
+    }
+
+    /// Addition operator.
+    friend ybuffers_iterator operator+(std::ptrdiff_t difference,
+            const ybuffers_iterator& iter)
+    {
+        ybuffers_iterator tmp(iter);
+        tmp.advance(difference);
+        return tmp;
+    }
+
+    /// Subtraction operator.
+    friend ybuffers_iterator operator-(const ybuffers_iterator& iter,
+            std::ptrdiff_t difference)
+    {
+        ybuffers_iterator tmp(iter);
+        tmp.advance(-difference);
+        return tmp;
+    }
+
+    /// Subtraction operator.
+    friend std::ptrdiff_t operator-(const ybuffers_iterator& a,
+            const ybuffers_iterator& b)
+    {
+        return b.distance_to(a);
+    }
+
+    /// Test two iterators for equality.
+    friend bool operator==(const ybuffers_iterator& a, const ybuffers_iterator& b)
+    {
+        return a.equal(b);
+    }
+
+    /// Test two iterators for inequality.
+    friend bool operator!=(const ybuffers_iterator& a, const ybuffers_iterator& b)
+    {
+        return !a.equal(b);
+    }
+
+    /// Compare two iterators.
+    friend bool operator<(const ybuffers_iterator& a, const ybuffers_iterator& b)
+    {
+        return (a.current_ < b.current_)
+                || ((a.current_ == b.current_)
+                        && (a.current_buffer_position_ < b.current_buffer_position_));
+    }
+
+    /// Compare two iterators.
+    friend bool operator<=(const ybuffers_iterator& a, const ybuffers_iterator& b)
+    {
+        return !(b < a);
+    }
+
+    /// Compare two iterators.
+    friend bool operator>(const ybuffers_iterator& a, const ybuffers_iterator& b)
+    {
+        return b < a;
+    }
+
+    /// Compare two iterators.
+    friend bool operator>=(const ybuffers_iterator& a, const ybuffers_iterator& b)
+    {
+        return !(a < b);
+    }
+
+    /// Get internal iterators
+    std::pair<typename BufferSequence::const_iterator, size_t> position() const
+    {
+        return std::make_pair(current_, current_buffer_position_);
+    }
+
+  private:
+    // Dereference the iterator.
+    byte_type& dereference() const
+    {
+        return boost::asio::buffer_cast<byte_type*>(current_buffer_)[current_buffer_position_];
+    }
+
+    // Compare two iterators for equality.
+    bool equal(const ybuffers_iterator& other) const
+    {
+        return current_ == other.current_
+                && current_buffer_position_ == other.current_buffer_position_;
+    }
+
+    // Increment the iterator.
+    void increment()
+    {
+        BOOST_ASSERT(current_ != end_ && "iterator out of bounds");
+
+        // Check if the increment can be satisfied by the current buffer.
+        ++current_buffer_position_;
+        if (current_buffer_position_ != boost::asio::buffer_size(current_buffer_))
+            return;
+
+        // Find the next non-empty buffer.
+        ++current_;
+        current_buffer_position_ = 0;
+        while (current_ != end_)
+        {
+            current_buffer_ = *current_;
+            if (boost::asio::buffer_size(current_buffer_) > 0)
+                return;
+            ++current_;
+        }
+    }
+
+    // Decrement the iterator.
+    void decrement()
+    {
+        BOOST_ASSERT((current_buffer_position_ != 0 || current_ != begin_) && "iterator out of bounds");
+
+        // Check if the decrement can be satisfied by the current buffer.
+        if (current_buffer_position_ != 0)
+        {
+            --current_buffer_position_;
+            return;
+        }
+
+        // Find the previous non-empty buffer.
+        typename BufferSequence::const_iterator iter = current_;
+        while (iter != begin_)
+        {
+            --iter;
+            buffer_type buffer = *iter;
+            std::size_t buffer_size = boost::asio::buffer_size(buffer);
+            if (buffer_size > 0)
+            {
+                current_ = iter;
+                current_buffer_ = buffer;
+                current_buffer_position_ = buffer_size - 1;
+                return;
+            }
+        }
+    }
+
+    // Advance the iterator by the specified distance.
+    void advance(std::ptrdiff_t n)
+    {
+        if (n > 0)
+        {
+            BOOST_ASSERT(current_ != end_ && "iterator out of bounds");
+            for (;;)
+            {
+                std::ptrdiff_t current_buffer_balance
+                        = boost::asio::buffer_size(current_buffer_)
+                        - current_buffer_position_;
+
+                // Check if the advance can be satisfied by the current buffer.
+                if (current_buffer_balance > n)
+                {
+                    current_buffer_position_ += n;
+                    return;
+                }
+
+                // Update position.
+                n -= current_buffer_balance;
+
+                // Move to next buffer. If it is empty then it will be skipped on the
+                // next iteration of this loop.
+                if (++current_ == end_)
+                {
+                    BOOST_ASSERT(n == 0 && "iterator out of bounds");
+                    current_buffer_ = buffer_type();
+                    current_buffer_position_ = 0;
+                    return;
+                }
+                current_buffer_ = *current_;
+                current_buffer_position_ = 0;
+            }
+        }
+        else if (n < 0)
+        {
+            std::size_t abs_n = -n;
+            for (;;)
+            {
+                // Check if the advance can be satisfied by the current buffer.
+                if (current_buffer_position_ >= abs_n)
+                {
+                    current_buffer_position_ -= abs_n;
+                    return;
+                }
+
+                // Update position.
+                abs_n -= current_buffer_position_;
+
+                // Check if we've reached the beginning of the buffers.
+                if (current_ == begin_)
+                {
+                    BOOST_ASSERT(abs_n == 0 && "iterator out of bounds");
+                    current_buffer_position_ = 0;
+                    return;
+                }
+
+                // Find the previous non-empty buffer.
+                typename BufferSequence::const_iterator iter = current_;
+                while (iter != begin_)
+                {
+                    --iter;
+                    buffer_type buffer = *iter;
+                    std::size_t buffer_size = boost::asio::buffer_size(buffer);
+                    if (buffer_size > 0)
+                    {
+                        current_ = iter;
+                        current_buffer_ = buffer;
+                        current_buffer_position_ = buffer_size;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Determine the distance between two iterators.
+    std::ptrdiff_t distance_to(const ybuffers_iterator& other) const
+    {
+        std::ptrdiff_t pos_d = other.current_buffer_position_ - current_buffer_position_;
+        if (current_ == other.current_)
+            return pos_d;
+
+        bool other_less = other.current_ < current_;
+        typename BufferSequence::const_iterator a = other_less ? other.current_ : current_;
+        const typename BufferSequence::const_iterator& b = other_less ? current_ : other.current_;
+
+        std::ptrdiff_t abs_d = 0;
+        while (a != b)
+            abs_d += boost::asio::buffer_size(*a++);
+
+        std::ptrdiff_t d = (other_less ? -abs_d : +abs_d);
+        d += pos_d;
+        return d;
+    }
+
+    buffer_type current_buffer_;
+    std::size_t current_buffer_position_;
+    typename BufferSequence::const_iterator begin_;
+    typename BufferSequence::const_iterator current_;
+    typename BufferSequence::const_iterator end_;
+};
+
+/// Construct an iterator representing the beginning of the buffers' data.
+template <typename BufferSequence>
+inline ybuffers_iterator<BufferSequence> ybuffers_begin(
+    const BufferSequence& buffers)
+{
+    return ybuffers_iterator<BufferSequence>::begin(buffers);
+}
+
+/// Construct an iterator representing the end of the buffers' data.
+template <typename BufferSequence>
+inline ybuffers_iterator<BufferSequence> ybuffers_end(
+    const BufferSequence& buffers)
+{
+    return ybuffers_iterator<BufferSequence>::end(buffers);
+}
+
+
+
+#endif // BUFFER_ITERATOR_H

@@ -31,8 +31,8 @@ namespace y {
 namespace net {
 
 /**
-   The network_array class template provides a static size array of bytes 
-   that has accessors function to make getting and setting data network friendly.
+   The network_array class template provides a static size array of bytes
+   that has accessor functions to make getting and setting data network friendly.
 
    Uses the Endian/Non-Endian transform functions, (i.e. htons,ntohs)
 
@@ -49,7 +49,7 @@ class network_array : public array<uint8_t, N>
     size_t  nal; // acronym: network array length
 
   public:
-    /// Constructs an empty network_array 
+    /// Constructs an empty network_array
     /*
 
     */
@@ -66,7 +66,7 @@ class network_array : public array<uint8_t, N>
     const size_t  position(const size_t p=N+1)
     {
         if( p != N + 1 )  nap = p;
-        return nap; 
+        return nap;
     }
 
     /// Get & Set the length of data in the array
@@ -78,8 +78,8 @@ class network_array : public array<uint8_t, N>
     const size_t  length(const size_t l=N+1)
     {
         if( l != N + 1 )  nal = l;
-        return nal; 
-    }    
+        return nal;
+    }
 
     /// Gets data from the array
     /**
@@ -91,7 +91,7 @@ class network_array : public array<uint8_t, N>
     */
     size_t get(char & d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
@@ -113,7 +113,7 @@ class network_array : public array<uint8_t, N>
     */
     size_t put(const char d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
@@ -140,7 +140,7 @@ class network_array : public array<uint8_t, N>
     */
     size_t get(uint8_t & d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
@@ -162,7 +162,7 @@ class network_array : public array<uint8_t, N>
     */
     size_t put(const uint8_t d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
@@ -190,13 +190,14 @@ class network_array : public array<uint8_t, N>
     */
     size_t get(uint16_t & d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
         }
 
-        d = ntohs( *((uint16_t *)&array<uint8_t,N>::elems[nap]) );
+        memcpy(&d, &array<uint8_t,N>::elems[nap], sizeof(uint16_t));
+        d = ntohs(d);
 
         if( incpos ) nap += sizeof(d);
         return sizeof(d);
@@ -212,13 +213,14 @@ class network_array : public array<uint8_t, N>
     */
     size_t put(const uint16_t d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
         }
 
-        *((uint16_t *)&array<uint8_t,N>::elems[nap]) = htons(d);
+        uint16_t v = htons(d);
+        memcpy(&array<uint8_t,N>::elems[nap], &v, sizeof(v));
 
         if( incpos )
         {
@@ -240,13 +242,14 @@ class network_array : public array<uint8_t, N>
     */
     size_t get(uint32_t & d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
         }
 
-        d = ntohl( *((uint32_t *)&array<uint8_t,N>::elems[nap]) );
+        memcpy(&d, &array<uint8_t,N>::elems[nap], sizeof(uint32_t));
+        d = ntohl(d);
 
         if( incpos ) nap += sizeof(d);
         return sizeof(d);
@@ -262,13 +265,14 @@ class network_array : public array<uint8_t, N>
     */
     size_t put(const uint32_t d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
         }
 
-        *((uint32_t *)&array<uint8_t,N>::elems[nap]) = htonl(d);
+        uint32_t v = htonl(d);
+        memcpy(&array<uint8_t,N>::elems[nap], &v, sizeof(v));
 
         if( incpos )
         {
@@ -290,13 +294,15 @@ class network_array : public array<uint8_t, N>
     */
     size_t get(ip::address_v4 & d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
         }
 
-        d = ip::address_v4( ntohl( *((uint32_t *)&array<uint8_t,N>::elems[nap]) ) );
+        uint32_t v = 0;
+        memcpy(&v, &array<uint8_t,N>::elems[nap], sizeof(uint32_t));
+        d = ip::address_v4( ntohl(v) );
 
         if( incpos ) nap += sizeof(uint32_t);
         return sizeof(d);
@@ -312,13 +318,14 @@ class network_array : public array<uint8_t, N>
     */
     size_t put(const ip::address_v4 & d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
         }
 
-        *((uint32_t *)&array<uint8_t,N>::elems[nap]) = htonl(d.to_ulong());
+        uint32_t v = htonl(d.to_ulong());
+        memcpy(&array<uint8_t,N>::elems[nap], &v, sizeof(uint32_t));
 
         if( incpos )
         {
@@ -340,7 +347,7 @@ class network_array : public array<uint8_t, N>
     */
     size_t get(ip::address_v6 & d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
@@ -351,7 +358,7 @@ class network_array : public array<uint8_t, N>
         d = ip::address_v6(bytes);
         if( incpos )
         {
-            nap += 16; 
+            nap += 16;
             if( nap > nal ) nal += 16;
         }
         return 16;
@@ -367,7 +374,7 @@ class network_array : public array<uint8_t, N>
     */
     size_t put(const ip::address_v6 & d, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
@@ -396,7 +403,7 @@ class network_array : public array<uint8_t, N>
     */
     size_t get(string & d, const size_t len, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);
@@ -428,7 +435,7 @@ class network_array : public array<uint8_t, N>
     */
     size_t put(const string & d, const size_t len, const size_t p=N+1, const bool incpos=true)
     {
-        if( p != N+1 ) 
+        if( p != N+1 )
         {
             array<uint8_t,N>::rangecheck(p);
             position(p);

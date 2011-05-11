@@ -1,4 +1,4 @@
-CONFS=ip_param.conf nwsmtp.conf remove_headers.conf virtual_alias_maps
+CONFS=ip_param.conf remove_headers.conf greylisting.conf
 
 install-data-am:
 	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/nwsmtp

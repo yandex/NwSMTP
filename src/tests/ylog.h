@@ -19,8 +19,8 @@ struct ylog_t : private boost::noncopyable
 
         template <class T>
         helper& operator<< (const T& t)
-        {      
-            q_->os_ << t;       
+        {
+            q_->os_ << t;
             return *this;
         }
 
@@ -50,24 +50,24 @@ struct ylog_t : private boost::noncopyable
     std::ostream& os_;
     boost::mutex m_;
 
-    explicit ylog_t(std::ostream& os) 
-            : os_(os)  
+    explicit ylog_t(std::ostream& os)
+            : os_(os)
     {
     }
 
     template <class T>
     ylog_t::helper operator<< (T t)
-    {      
+    {
         helper h (this);
-        os_ << t;       
+        os_ << t;
         return h;
     }
 };
 
-extern ylog_t ycout; 
-extern ylog_t ycerr; 
+extern ylog_t ycout;
+extern ylog_t ycerr;
 
-//--- 
+//---
 
 } // namespace ylog
 

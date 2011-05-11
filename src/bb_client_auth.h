@@ -1,8 +1,6 @@
 #if !defined(_BB_CLIENT_AUTH_H_)
 #define _BB_CLIENT_AUTH_H_
 
-#include <config.h>
-
 #ifdef ENABLE_AUTH_BLACKBOX
 
 #include <string>
@@ -14,8 +12,8 @@
 #if defined(HAVE_CONFIG_H)
 #include "../config.h"
 #endif
-#if defined(HAVE_PA_INTERFACE_H)
-#include <pa/interface.h>
+#if defined(HAVE_PA_ASYNC_H)
+#include <pa/async.h>
 #endif
 
 #include "http_client.h"
@@ -31,59 +29,62 @@ class black_box_client_auth:
 
 {
   public:
-    
+
     typedef struct
     {
         std::string login_;
         std::string password_;
         std::string ip_;
         std::string session_id_;
+        std::string method_;
     } auth_info_t;
-        
+
     black_box_client_auth(boost::asio::io_service& io_service, switchcfg *_switch_cfg);
-        
+
     ~black_box_client_auth();
-        
-    typedef boost::function< void (check::chk_status _status) > set_status_t;
-        
+
+    typedef boost::function< void (check::chk_status _status, long long unsigned _suid) > set_status_t;
+
     void start(const auth_info_t &_auth_info, set_status_t _status_cb);
-        
+
     void stop();
 
     check_rcpt_t check_rcpt() const;
-        
-  protected:
-    
-    void report(const check::chk_status _status, const std::string &_log, bool success = true);         // end check process
 
-    void do_stop();    
+  protected:
+
+    void report(const check::chk_status _status, const std::string &_log,long long unsigned _suid=0,  bool success = true);         // end check process
+
+    void do_stop();
     void restart();                                                             // new BB request
     void on_error (const boost::system::error_code& ec, const std::string& logemsg);
     void on_header_read(const std::string &_headers);
     void on_response_read(const std::string &_data, bool _eof);
-        
+
     black_box_parser m_black_box_parser;
-        
+
     http_client_ptr m_http_client;
-        
+
     switchcfg *m_switch_cfg;
-        
+
     unsigned int m_connect_count;
-        
+
     boost::asio::io_service &m_io_service;
-        
+
     set_status_t m_set_status;
-        
+
     std::string m_log_host;
-        
+
     timer m_log_delay;
-    
-    #if defined(HAVE_PA_INTERFACE_H)        
+
+#if defined(HAVE_PA_ASYNC_H)
     pa::stimer_t m_pa_timer;
-    #endif
-        
+#endif
+
     boost::asio::io_service::strand m_strand;
-        
+
+    std::string sasl_method_;
+
     auth_info_t auth_info_;
 };
 

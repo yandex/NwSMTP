@@ -887,6 +887,9 @@ BOOST_LDFLAGS
 BOOST_SYSTEM_LIB
 BOOST_THREAD_LIB
 BOOST_PROGRAM_OPTIONS_LIB
+PKG_CONFIG
+protobuf_CFLAGS
+protobuf_LIBS
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -904,7 +907,10 @@ CXXFLAGS
 CCC
 CXXCPP
 F77
-FFLAGS'
+FFLAGS
+PKG_CONFIG
+protobuf_CFLAGS
+protobuf_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1506,8 +1512,9 @@ Optional Packages:
                           check standard prefixes (ARG=yes); disable (ARG=no)
   --with-expat-inc=[DIR]  path to Expat XML Parser headers
   --with-expat-lib=[ARG]  link options for Expat XML Parser libraries
-  --with-boost[=DIR]      use boost (default is yes) - it is possible to
-                          specify the root directory for boost (optional)
+  --with-boost[=ARG]      use Boost library from a standard location
+                          (ARG=yes), from the specified location (ARG=<path>),
+                          or disable it (ARG=no) [ARG=yes]
   --with-boost-libdir=LIB_DIR
                           Force given directory for boost libraries. Note that
                           this will overwrite library path detection, so use
@@ -1544,6 +1551,11 @@ Some influential environment variables:
   CXXCPP      C++ preprocessor
   F77         Fortran 77 compiler command
   FFLAGS      Fortran 77 compiler flags
+  PKG_CONFIG  path to pkg-config utility
+  protobuf_CFLAGS
+              C compiler flags for protobuf, overriding pkg-config
+  protobuf_LIBS
+              linker flags for protobuf, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -2561,12 +2573,12 @@ fi
 # AC_CHECK_LIB
 
 # ===========================================================================
-#          http://www.nongnu.org/autoconf-archive/ax_boost_base.html
+#       http://www.gnu.org/software/autoconf-archive/ax_boost_base.html
 # ===========================================================================
 #
 # SYNOPSIS
 #
-#   AX_BOOST_BASE([MINIMUM-VERSION])
+#   AX_BOOST_BASE([MINIMUM-VERSION], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
 #
 # DESCRIPTION
 #
@@ -2588,15 +2600,19 @@ fi
 # LICENSE
 #
 #   Copyright (c) 2008 Thomas Porschberg <thomas@randspringer.de>
+#   Copyright (c) 2009 Peter Adolphs
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
-#   and this notice are preserved.
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 18
 
 
 
 # ===========================================================================
-#         http://www.nongnu.org/autoconf-archive/ax_boost_thread.html
+#      http://www.gnu.org/software/autoconf-archive/ax_boost_thread.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -2624,7 +2640,10 @@ fi
 #
 #   Copying and distribution of this file, with or without modification, are
 #   permitted in any medium without royalty provided the copyright notice
-#   and this notice are preserved.
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 22
 
 
 
@@ -2665,9 +2684,9 @@ fi
 
 
 
-# ===========================================================================
-#    http://www.nongnu.org/autoconf-archive/ax_boost_program_options.html
-# ===========================================================================
+# ============================================================================
+#  http://www.gnu.org/software/autoconf-archive/ax_boost_program_options.html
+# ============================================================================
 #
 # SYNOPSIS
 #
@@ -2696,7 +2715,7 @@ fi
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 12
+#serial 20
 
 
 
@@ -4671,7 +4690,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4674 "configure"' > conftest.$ac_ext
+  echo '#line 4693 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7403,11 +7422,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7406: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7425: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7410: \$? = $ac_status" >&5
+   echo "$as_me:7429: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7671,11 +7690,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7674: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7693: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7678: \$? = $ac_status" >&5
+   echo "$as_me:7697: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7775,11 +7794,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7778: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7797: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7782: \$? = $ac_status" >&5
+   echo "$as_me:7801: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9240,7 +9259,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 9243 "configure"' > conftest.$ac_ext
+    echo '#line 9262 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -10104,7 +10123,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10107 "configure"
+#line 10126 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10204,7 +10223,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10207 "configure"
+#line 10226 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12543,11 +12562,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12546: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12565: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12550: \$? = $ac_status" >&5
+   echo "$as_me:12569: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12647,11 +12666,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12650: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12669: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12654: \$? = $ac_status" >&5
+   echo "$as_me:12673: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13183,7 +13202,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 13186 "configure"' > conftest.$ac_ext
+    echo '#line 13205 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -14241,11 +14260,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14244: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14263: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14248: \$? = $ac_status" >&5
+   echo "$as_me:14267: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14345,11 +14364,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14348: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14367: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14352: \$? = $ac_status" >&5
+   echo "$as_me:14371: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15790,7 +15809,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 15793 "configure"' > conftest.$ac_ext
+    echo '#line 15812 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -16567,11 +16586,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16570: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16589: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16574: \$? = $ac_status" >&5
+   echo "$as_me:16593: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16835,11 +16854,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16838: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16857: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16842: \$? = $ac_status" >&5
+   echo "$as_me:16861: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16939,11 +16958,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16942: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16961: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16946: \$? = $ac_status" >&5
+   echo "$as_me:16965: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18404,7 +18423,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 18407 "configure"' > conftest.$ac_ext
+    echo '#line 18426 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -21768,14 +21787,14 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 if test "${with_boost+set}" = set; then
   withval=$with_boost;
     if test "$withval" = "no"; then
-		want_boost="no"
+        want_boost="no"
     elif test "$withval" = "yes"; then
         want_boost="yes"
         ac_boost_path=""
     else
-	    want_boost="yes"
+        want_boost="yes"
         ac_boost_path="$withval"
-	fi
+    fi
 
 else
   want_boost="yes"
@@ -21787,7 +21806,7 @@ fi
 # Check whether --with-boost-libdir was given.
 if test "${with_boost_libdir+set}" = set; then
   withval=$with_boost_libdir;
-        if test -d $withval
+        if test -d "$withval"
         then
                 ac_boost_lib_path="$withval"
         else
@@ -21803,68 +21822,82 @@ fi
 
 
 if test "x$want_boost" = "xyes"; then
-	boost_lib_version_req=1.42
-	boost_lib_version_req_shorten=`expr $boost_lib_version_req : '\([0-9]*\.[0-9]*\)'`
-	boost_lib_version_req_major=`expr $boost_lib_version_req : '\([0-9]*\)'`
-	boost_lib_version_req_minor=`expr $boost_lib_version_req : '[0-9]*\.\([0-9]*\)'`
-	boost_lib_version_req_sub_minor=`expr $boost_lib_version_req : '[0-9]*\.[0-9]*\.\([0-9]*\)'`
-	if test "x$boost_lib_version_req_sub_minor" = "x" ; then
-		boost_lib_version_req_sub_minor="0"
-    	fi
-	WANT_BOOST_VERSION=`expr $boost_lib_version_req_major \* 100000 \+  $boost_lib_version_req_minor \* 100 \+ $boost_lib_version_req_sub_minor`
-	{ echo "$as_me:$LINENO: checking for boostlib >= $boost_lib_version_req" >&5
+    boost_lib_version_req=1.42
+    boost_lib_version_req_shorten=`expr $boost_lib_version_req : '\([0-9]*\.[0-9]*\)'`
+    boost_lib_version_req_major=`expr $boost_lib_version_req : '\([0-9]*\)'`
+    boost_lib_version_req_minor=`expr $boost_lib_version_req : '[0-9]*\.\([0-9]*\)'`
+    boost_lib_version_req_sub_minor=`expr $boost_lib_version_req : '[0-9]*\.[0-9]*\.\([0-9]*\)'`
+    if test "x$boost_lib_version_req_sub_minor" = "x" ; then
+        boost_lib_version_req_sub_minor="0"
+        fi
+    WANT_BOOST_VERSION=`expr $boost_lib_version_req_major \* 100000 \+  $boost_lib_version_req_minor \* 100 \+ $boost_lib_version_req_sub_minor`
+    { echo "$as_me:$LINENO: checking for boostlib >= $boost_lib_version_req" >&5
 echo $ECHO_N "checking for boostlib >= $boost_lib_version_req... $ECHO_C" >&6; }
-	succeeded=no
+    succeeded=no
 
-				if test "$ac_boost_path" != ""; then
-		BOOST_LDFLAGS="-L$ac_boost_path/lib"
-		BOOST_CPPFLAGS="-I$ac_boost_path/include"
-	else
-		for ac_boost_path_tmp in /usr /usr/local /opt /opt/local ; do
-			if test -d "$ac_boost_path_tmp/include/boost" && test -r "$ac_boost_path_tmp/include/boost"; then
-				BOOST_LDFLAGS="-L$ac_boost_path_tmp/lib"
-				BOOST_CPPFLAGS="-I$ac_boost_path_tmp/include"
-				break;
-			fi
-		done
-	fi
+                        libsubdirs="lib"
+    if test `uname -m` = x86_64; then
+        libsubdirs="lib64 lib lib64"
+    fi
+
+                if test "$ac_boost_path" != ""; then
+        BOOST_CPPFLAGS="-I$ac_boost_path/include"
+        for ac_boost_path_tmp in $libsubdirs; do
+                if test -d "$ac_boost_path"/"$ac_boost_path_tmp" ; then
+                        BOOST_LDFLAGS="-L$ac_boost_path/$ac_boost_path_tmp"
+                        break
+                fi
+        done
+    elif test "$cross_compiling" != yes; then
+        for ac_boost_path_tmp in /usr /usr/local /opt /opt/local ; do
+            if test -d "$ac_boost_path_tmp/include/boost" && test -r "$ac_boost_path_tmp/include/boost"; then
+                for libsubdir in $libsubdirs ; do
+                    if ls "$ac_boost_path_tmp/$libsubdir/libboost_"* >/dev/null 2>&1 ; then break; fi
+                done
+                BOOST_LDFLAGS="-L$ac_boost_path_tmp/$libsubdir"
+                BOOST_CPPFLAGS="-I$ac_boost_path_tmp/include"
+                break;
+            fi
+        done
+    fi
 
             if test "$ac_boost_lib_path" != ""; then
        BOOST_LDFLAGS="-L$ac_boost_lib_path"
     fi
 
-	CPPFLAGS_SAVED="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
-	export CPPFLAGS
+    CPPFLAGS_SAVED="$CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
+    export CPPFLAGS
 
-	LDFLAGS_SAVED="$LDFLAGS"
-	LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
-	export LDFLAGS
+    LDFLAGS_SAVED="$LDFLAGS"
+    LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
+    export LDFLAGS
 
-	ac_ext=cpp
+
+    ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-     	cat >conftest.$ac_ext <<_ACEOF
+        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-	#include <boost/version.hpp>
+    #include <boost/version.hpp>
 
 int
 main ()
 {
 
-	#if BOOST_VERSION >= $WANT_BOOST_VERSION
-	// Everything is okay
-	#else
-	#  error Boost version is too old
-	#endif
+    #if BOOST_VERSION >= $WANT_BOOST_VERSION
+    // Everything is okay
+    #else
+    #  error Boost version is too old
+    #endif
 
   ;
   return 0;
@@ -21890,8 +21923,8 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 
         { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-	succeeded=yes
-	found_system=yes
+    succeeded=yes
+    found_system=yes
 
 else
   echo "$as_me: failed program was:" >&5
@@ -21902,7 +21935,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-	ac_ext=c
+    ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -21911,86 +21944,93 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-			if test "x$succeeded" != "xyes"; then
-		_version=0
-		if test "$ac_boost_path" != ""; then
-			if test -d "$ac_boost_path" && test -r "$ac_boost_path"; then
-				for i in `ls -d $ac_boost_path/include/boost-* 2>/dev/null`; do
-					_version_tmp=`echo $i | sed "s#$ac_boost_path##" | sed 's/\/include\/boost-//' | sed 's/_/./'`
-					V_CHECK=`expr $_version_tmp \> $_version`
-					if test "$V_CHECK" = "1" ; then
-						_version=$_version_tmp
-					fi
-					VERSION_UNDERSCORE=`echo $_version | sed 's/\./_/'`
-					BOOST_CPPFLAGS="-I$ac_boost_path/include/boost-$VERSION_UNDERSCORE"
-				done
-			fi
-		else
-			for ac_boost_path in /usr /usr/local /opt /opt/local ; do
-				if test -d "$ac_boost_path" && test -r "$ac_boost_path"; then
-					for i in `ls -d $ac_boost_path/include/boost-* 2>/dev/null`; do
-						_version_tmp=`echo $i | sed "s#$ac_boost_path##" | sed 's/\/include\/boost-//' | sed 's/_/./'`
-						V_CHECK=`expr $_version_tmp \> $_version`
-						if test "$V_CHECK" = "1" ; then
-							_version=$_version_tmp
-	               					best_path=$ac_boost_path
-						fi
-					done
-				fi
-			done
+            if test "x$succeeded" != "xyes"; then
+        _version=0
+        if test "$ac_boost_path" != ""; then
+            if test -d "$ac_boost_path" && test -r "$ac_boost_path"; then
+                for i in `ls -d $ac_boost_path/include/boost-* 2>/dev/null`; do
+                    _version_tmp=`echo $i | sed "s#$ac_boost_path##" | sed 's/\/include\/boost-//' | sed 's/_/./'`
+                    V_CHECK=`expr $_version_tmp \> $_version`
+                    if test "$V_CHECK" = "1" ; then
+                        _version=$_version_tmp
+                    fi
+                    VERSION_UNDERSCORE=`echo $_version | sed 's/\./_/'`
+                    BOOST_CPPFLAGS="-I$ac_boost_path/include/boost-$VERSION_UNDERSCORE"
+                done
+            fi
+        else
+            if test "$cross_compiling" != yes; then
+                for ac_boost_path in /usr /usr/local /opt /opt/local ; do
+                    if test -d "$ac_boost_path" && test -r "$ac_boost_path"; then
+                        for i in `ls -d $ac_boost_path/include/boost-* 2>/dev/null`; do
+                            _version_tmp=`echo $i | sed "s#$ac_boost_path##" | sed 's/\/include\/boost-//' | sed 's/_/./'`
+                            V_CHECK=`expr $_version_tmp \> $_version`
+                            if test "$V_CHECK" = "1" ; then
+                                _version=$_version_tmp
+                                best_path=$ac_boost_path
+                            fi
+                        done
+                    fi
+                done
 
-			VERSION_UNDERSCORE=`echo $_version | sed 's/\./_/'`
-			BOOST_CPPFLAGS="-I$best_path/include/boost-$VERSION_UNDERSCORE"
-            if test "$ac_boost_lib_path" = ""
-            then
-               BOOST_LDFLAGS="-L$best_path/lib"
+                VERSION_UNDERSCORE=`echo $_version | sed 's/\./_/'`
+                BOOST_CPPFLAGS="-I$best_path/include/boost-$VERSION_UNDERSCORE"
+                if test "$ac_boost_lib_path" = ""; then
+                    for libsubdir in $libsubdirs ; do
+                        if ls "$best_path/$libsubdir/libboost_"* >/dev/null 2>&1 ; then break; fi
+                    done
+                    BOOST_LDFLAGS="-L$best_path/$libsubdir"
+                fi
             fi
 
-	    		if test "x$BOOST_ROOT" != "x"; then
-				if test -d "$BOOST_ROOT" && test -r "$BOOST_ROOT" && test -d "$BOOST_ROOT/stage/lib" && test -r "$BOOST_ROOT/stage/lib"; then
-					version_dir=`expr //$BOOST_ROOT : '.*/\(.*\)'`
-					stage_version=`echo $version_dir | sed 's/boost_//' | sed 's/_/./g'`
-			        	stage_version_shorten=`expr $stage_version : '\([0-9]*\.[0-9]*\)'`
-					V_CHECK=`expr $stage_version_shorten \>\= $_version`
+            if test "x$BOOST_ROOT" != "x"; then
+                for libsubdir in $libsubdirs ; do
+                    if ls "$BOOST_ROOT/stage/$libsubdir/libboost_"* >/dev/null 2>&1 ; then break; fi
+                done
+                if test -d "$BOOST_ROOT" && test -r "$BOOST_ROOT" && test -d "$BOOST_ROOT/stage/$libsubdir" && test -r "$BOOST_ROOT/stage/$libsubdir"; then
+                    version_dir=`expr //$BOOST_ROOT : '.*/\(.*\)'`
+                    stage_version=`echo $version_dir | sed 's/boost_//' | sed 's/_/./g'`
+                        stage_version_shorten=`expr $stage_version : '\([0-9]*\.[0-9]*\)'`
+                    V_CHECK=`expr $stage_version_shorten \>\= $_version`
                     if test "$V_CHECK" = "1" -a "$ac_boost_lib_path" = "" ; then
-						{ echo "$as_me:$LINENO: We will use a staged boost library from $BOOST_ROOT" >&5
+                        { echo "$as_me:$LINENO: We will use a staged boost library from $BOOST_ROOT" >&5
 echo "$as_me: We will use a staged boost library from $BOOST_ROOT" >&6;}
-						BOOST_CPPFLAGS="-I$BOOST_ROOT"
-						BOOST_LDFLAGS="-L$BOOST_ROOT/stage/lib"
-					fi
-				fi
-	    		fi
-		fi
+                        BOOST_CPPFLAGS="-I$BOOST_ROOT"
+                        BOOST_LDFLAGS="-L$BOOST_ROOT/stage/$libsubdir"
+                    fi
+                fi
+            fi
+        fi
 
-		CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
-		export CPPFLAGS
-		LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
-		export LDFLAGS
+        CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
+        export CPPFLAGS
+        LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
+        export LDFLAGS
 
-		ac_ext=cpp
+        ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-	     	cat >conftest.$ac_ext <<_ACEOF
+            cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-		#include <boost/version.hpp>
+        #include <boost/version.hpp>
 
 int
 main ()
 {
 
-		#if BOOST_VERSION >= $WANT_BOOST_VERSION
-		// Everything is okay
-		#else
-		#  error Boost version is too old
-		#endif
+        #if BOOST_VERSION >= $WANT_BOOST_VERSION
+        // Everything is okay
+        #else
+        #  error Boost version is too old
+        #endif
 
   ;
   return 0;
@@ -22014,10 +22054,10 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest.$ac_objext; then
 
-        	{ echo "$as_me:$LINENO: result: yes" >&5
+            { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-		succeeded=yes
-		found_system=yes
+        succeeded=yes
+        found_system=yes
 
 else
   echo "$as_me: failed program was:" >&5
@@ -22028,24 +22068,25 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-		ac_ext=c
+        ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-	fi
+    fi
 
-	if test "$succeeded" != "yes" ; then
-		if test "$_version" = "0" ; then
-			{ { echo "$as_me:$LINENO: error: We could not detect the boost libraries (version $boost_lib_version_req_shorten or higher). If you have a staged boost library (still not installed) please specify \$BOOST_ROOT in your environment and do not give a PATH to --with-boost option.  If you are sure you have boost installed, then check your version number looking in <boost/version.hpp>. See http://randspringer.de/boost for more documentation." >&5
-echo "$as_me: error: We could not detect the boost libraries (version $boost_lib_version_req_shorten or higher). If you have a staged boost library (still not installed) please specify \$BOOST_ROOT in your environment and do not give a PATH to --with-boost option.  If you are sure you have boost installed, then check your version number looking in <boost/version.hpp>. See http://randspringer.de/boost for more documentation." >&2;}
-   { (exit 1); exit 1; }; }
-		else
-			{ echo "$as_me:$LINENO: Your boost libraries seems to old (version $_version)." >&5
+    if test "$succeeded" != "yes" ; then
+        if test "$_version" = "0" ; then
+            { echo "$as_me:$LINENO: We could not detect the boost libraries (version $boost_lib_version_req_shorten or higher). If you have a staged boost library (still not installed) please specify \$BOOST_ROOT in your environment and do not give a PATH to --with-boost option.  If you are sure you have boost installed, then check your version number looking in <boost/version.hpp>. See http://randspringer.de/boost for more documentation." >&5
+echo "$as_me: We could not detect the boost libraries (version $boost_lib_version_req_shorten or higher). If you have a staged boost library (still not installed) please specify \$BOOST_ROOT in your environment and do not give a PATH to --with-boost option.  If you are sure you have boost installed, then check your version number looking in <boost/version.hpp>. See http://randspringer.de/boost for more documentation." >&6;}
+        else
+            { echo "$as_me:$LINENO: Your boost libraries seems to old (version $_version)." >&5
 echo "$as_me: Your boost libraries seems to old (version $_version)." >&6;}
-		fi
-	else
+        fi
+        # execute ACTION-IF-NOT-FOUND (if present):
+        :
+    else
 
 
 
@@ -22053,10 +22094,12 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BOOST
 _ACEOF
 
-	fi
+        # execute ACTION-IF-FOUND (if present):
+        :
+    fi
 
-        CPPFLAGS="$CPPFLAGS_SAVED"
-       	LDFLAGS="$LDFLAGS_SAVED"
+    CPPFLAGS="$CPPFLAGS_SAVED"
+    LDFLAGS="$LDFLAGS_SAVED"
 fi
 
 
@@ -22413,7 +22456,7 @@ if test "${with_boost_thread+set}" = set; then
             ax_boost_user_thread_lib=""
         else
 		    want_boost="yes"
-        	ax_boost_user_thread_lib="$withval"
+		ax_boost_user_thread_lib="$withval"
 		fi
 
 else
@@ -22447,7 +22490,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 			 CXXFLAGS_SAVE=$CXXFLAGS
 
 			 if test "x$build_os" = "xsolaris" ; then
-  				 CXXFLAGS="-pthreads $CXXFLAGS"
+				 CXXFLAGS="-pthreads $CXXFLAGS"
 			 elif test "x$build_os" = "xming32" ; then
 				 CXXFLAGS="-mthreads $CXXFLAGS"
 			 else
@@ -22603,7 +22646,7 @@ else
   link_thread="no"
 fi
 
-  				done
+				done
                 if test "x$link_thread" != "xyes"; then
                 for libextension in `ls $BOOSTLIBDIR/boost_thread*.dll* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^\(boost_thread.*\)\.dll.*$;\1;'` `ls $BOOSTLIBDIR/boost_thread*.a* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^\(boost_thread.*\)\.a*$;\1;'` ; do
                      ax_lib=${libextension}
@@ -22676,7 +22719,7 @@ else
   link_thread="no"
 fi
 
-  				done
+				done
                 fi
 
             else
@@ -22753,6 +22796,11 @@ fi
                   done
 
             fi
+            if test "x$ax_lib" = "x"; then
+                { { echo "$as_me:$LINENO: error: Could not find a version of the library!" >&5
+echo "$as_me: error: Could not find a version of the library!" >&2;}
+   { (exit 1); exit 1; }; }
+            fi
 			if test "x$link_thread" = "xno"; then
 				{ { echo "$as_me:$LINENO: error: Could not link against $ax_lib !" >&5
 echo "$as_me: error: Could not link against $ax_lib !" >&2;}
@@ -22760,7 +22808,7 @@ echo "$as_me: error: Could not link against $ax_lib !" >&2;}
                         else
                            case "x$build_os" in
                               *bsd* )
-			        BOOST_LDFLAGS="-pthread $BOOST_LDFLAGS"
+				BOOST_LDFLAGS="-pthread $BOOST_LDFLAGS"
                               break;
                               ;;
                            esac
@@ -22769,7 +22817,7 @@ echo "$as_me: error: Could not link against $ax_lib !" >&2;}
 		fi
 
 		CPPFLAGS="$CPPFLAGS_SAVED"
-    	LDFLAGS="$LDFLAGS_SAVED"
+	LDFLAGS="$LDFLAGS_SAVED"
 	fi
 
 
@@ -22784,7 +22832,7 @@ if test "${with_boost_program_options+set}" = set; then
             ax_boost_user_program_options_lib=""
         else
 		    want_boost="yes"
-        	ax_boost_user_program_options_lib="$withval"
+		ax_boost_user_program_options_lib="$withval"
 		fi
 
 else
@@ -22813,7 +22861,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
- 		                cat >conftest.$ac_ext <<_ACEOF
+				cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -22856,7 +22904,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-			               	ac_ext=c
+					ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -22945,7 +22993,7 @@ else
   link_program_options="no"
 fi
 
-  				done
+				done
                 if test "x$link_program_options" != "xyes"; then
                 for libextension in `ls $BOOSTLIBDIR/boost_program_options*.dll* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^\(boost_program_options.*\)\.dll.*$;\1;'` `ls $BOOSTLIBDIR/boost_program_options*.a* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^\(boost_program_options.*\)\.a*$;\1;'` ; do
                      ax_lib=${libextension}
@@ -23018,7 +23066,7 @@ else
   link_program_options="no"
 fi
 
-  				done
+				done
                 fi
                 else
                   for ax_lib in $ax_boost_user_program_options_lib boost_program_options-$ax_boost_user_program_options_lib; do
@@ -23087,6 +23135,11 @@ fi
 
                   done
                 fi
+            if test "x$ax_lib" = "x"; then
+                { { echo "$as_me:$LINENO: error: Could not find a version of the library!" >&5
+echo "$as_me: error: Could not find a version of the library!" >&2;}
+   { (exit 1); exit 1; }; }
+            fi
 				if test "x$link_program_options" != "xyes"; then
 					{ { echo "$as_me:$LINENO: error: Could not link against $ax_lib !" >&5
 echo "$as_me: error: Could not link against $ax_lib !" >&2;}
@@ -23094,7 +23147,7 @@ echo "$as_me: error: Could not link against $ax_lib !" >&2;}
 				fi
 		fi
 		CPPFLAGS="$CPPFLAGS_SAVED"
-    	LDFLAGS="$LDFLAGS_SAVED"
+	LDFLAGS="$LDFLAGS_SAVED"
 	fi
 
 
@@ -23240,6 +23293,237 @@ _ACEOF
 fi
 
 
+
+
+if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
+	if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
+set dummy ${ac_tool_prefix}pkg-config; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PKG_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $PKG_CONFIG" >&5
+echo "${ECHO_T}$PKG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_PKG_CONFIG"; then
+  ac_pt_PKG_CONFIG=$PKG_CONFIG
+  # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_ac_pt_PKG_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $ac_pt_PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_PKG_CONFIG="$ac_pt_PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_ac_pt_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_PKG_CONFIG=$ac_cv_path_ac_pt_PKG_CONFIG
+if test -n "$ac_pt_PKG_CONFIG"; then
+  { echo "$as_me:$LINENO: result: $ac_pt_PKG_CONFIG" >&5
+echo "${ECHO_T}$ac_pt_PKG_CONFIG" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+  if test "x$ac_pt_PKG_CONFIG" = x; then
+    PKG_CONFIG=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ echo "$as_me:$LINENO: WARNING: In the future, Autoconf will not detect cross-tools
+whose name does not start with the host triplet.  If you think this
+configuration is useful to you, please write to autoconf@gnu.org." >&5
+echo "$as_me: WARNING: In the future, Autoconf will not detect cross-tools
+whose name does not start with the host triplet.  If you think this
+configuration is useful to you, please write to autoconf@gnu.org." >&2;}
+ac_tool_warned=yes ;;
+esac
+    PKG_CONFIG=$ac_pt_PKG_CONFIG
+  fi
+else
+  PKG_CONFIG="$ac_cv_path_PKG_CONFIG"
+fi
+
+fi
+if test -n "$PKG_CONFIG"; then
+	_pkg_min_version=0.9.0
+	{ echo "$as_me:$LINENO: checking pkg-config is at least version $_pkg_min_version" >&5
+echo $ECHO_N "checking pkg-config is at least version $_pkg_min_version... $ECHO_C" >&6; }
+	if $PKG_CONFIG --atleast-pkgconfig-version $_pkg_min_version; then
+		{ echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	else
+		{ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+		PKG_CONFIG=""
+	fi
+
+fi
+
+pkg_failed=no
+{ echo "$as_me:$LINENO: checking for protobuf" >&5
+echo $ECHO_N "checking for protobuf... $ECHO_C" >&6; }
+
+if test -n "$PKG_CONFIG"; then
+    if test -n "$protobuf_CFLAGS"; then
+        pkg_cv_protobuf_CFLAGS="$protobuf_CFLAGS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"protobuf\"") >&5
+  ($PKG_CONFIG --exists --print-errors "protobuf") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_protobuf_CFLAGS=`$PKG_CONFIG --cflags "protobuf" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+if test -n "$PKG_CONFIG"; then
+    if test -n "$protobuf_LIBS"; then
+        pkg_cv_protobuf_LIBS="$protobuf_LIBS"
+    else
+        if test -n "$PKG_CONFIG" && \
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"protobuf\"") >&5
+  ($PKG_CONFIG --exists --print-errors "protobuf") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; then
+  pkg_cv_protobuf_LIBS=`$PKG_CONFIG --libs "protobuf" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+    fi
+else
+	pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        protobuf_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "protobuf"`
+        else
+	        protobuf_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "protobuf"`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$protobuf_PKG_ERRORS" >&5
+
+	{ { echo "$as_me:$LINENO: error: Package requirements (protobuf) were not met:
+
+$protobuf_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables protobuf_CFLAGS
+and protobuf_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&5
+echo "$as_me: error: Package requirements (protobuf) were not met:
+
+$protobuf_PKG_ERRORS
+
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
+
+Alternatively, you may set the environment variables protobuf_CFLAGS
+and protobuf_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+" >&2;}
+   { (exit 1); exit 1; }; }
+elif test $pkg_failed = untried; then
+	{ { echo "$as_me:$LINENO: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables protobuf_CFLAGS
+and protobuf_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://www.freedesktop.org/software/pkgconfig>.
+See \`config.log' for more details." >&5
+echo "$as_me: error: The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
+
+Alternatively, you may set the environment variables protobuf_CFLAGS
+and protobuf_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
+
+To get pkg-config, see <http://www.freedesktop.org/software/pkgconfig>.
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+	protobuf_CFLAGS=$pkg_cv_protobuf_CFLAGS
+	protobuf_LIBS=$pkg_cv_protobuf_LIBS
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+	:
+fi
 
 # Checks for header files.
 { echo "$as_me:$LINENO: checking for ANSI C header files" >&5
@@ -23983,7 +24267,7 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-for ac_header in pa/interface.h
+for ac_header in pa/async.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -24319,7 +24603,6 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-
 { echo "$as_me:$LINENO: checking for bbUrls2 in -lhostsearch" >&5
 echo $ECHO_N "checking for bbUrls2 in -lhostsearch... $ECHO_C" >&6; }
 if test "${ac_cv_lib_hostsearch_bbUrls2+set}" = set; then
@@ -24403,7 +24686,6 @@ fi
 
 
 fi
-
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -26753,11 +27035,14 @@ BOOST_LDFLAGS!$BOOST_LDFLAGS$ac_delim
 BOOST_SYSTEM_LIB!$BOOST_SYSTEM_LIB$ac_delim
 BOOST_THREAD_LIB!$BOOST_THREAD_LIB$ac_delim
 BOOST_PROGRAM_OPTIONS_LIB!$BOOST_PROGRAM_OPTIONS_LIB$ac_delim
+PKG_CONFIG!$PKG_CONFIG$ac_delim
+protobuf_CFLAGS!$protobuf_CFLAGS$ac_delim
+protobuf_LIBS!$protobuf_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 21; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 24; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

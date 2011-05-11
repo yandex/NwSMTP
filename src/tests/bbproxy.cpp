@@ -32,7 +32,7 @@ class yrand
     unsigned int seed_;
     boost::mutex mux_;
 
-  public: 
+  public:
     explicit yrand(unsigned int seed = gen_seed())
             : seed_(seed)
     {}
@@ -71,16 +71,16 @@ class connection: public boost::enable_shared_from_this<connection>,
     friend struct handle_io;
 
     void handle_hangup_timer(const boost::system::error_code& ec)
-    {   
+    {
         if (ec != boost::asio::error::operation_aborted)
             stop();
     }
 
     void start_hangup_timer()
-    {   
+    {
         timer_.expires_from_now(boost::posix_time::milliseconds( g_rnd() % 3000 ));
         timer_.async_wait(
-            boost::bind(&connection::handle_hangup_timer, 
+            boost::bind(&connection::handle_hangup_timer,
                     shared_from_this(), boost::asio::placeholders::error));
     }
 
@@ -93,10 +93,10 @@ class connection: public boost::enable_shared_from_this<connection>,
             handle_io handler = { shared_from_this() };
             bb_s_.async_connect(endpoint, boost::bind(handler, _1, 0));
             return;
-        }       
+        }
         ycout << "resolve failed: " << ec.message();
     }
-    
+
     void do_stop()
     {
         try {
@@ -132,9 +132,9 @@ class connection: public boost::enable_shared_from_this<connection>,
     {
         resolver_.async_resolve(bbhost_,
                 dns::type_a,
-                strand_.wrap(boost::bind(&connection::handle_resolve, 
+                strand_.wrap(boost::bind(&connection::handle_resolve,
                                 shared_from_this(), boost::asio::placeholders::error,
-                                boost::asio::placeholders::iterator)));        
+                                boost::asio::placeholders::iterator)));
     }
 
     void stop()
@@ -147,10 +147,10 @@ void connection::handle_io::operator()(const boost::system::error_code& ec, size
 {
     typedef boost::asio::streambuf::const_buffers_type const_buffers_type;
     typedef boost::asio::buffers_iterator<const_buffers_type> iterator;
-    boost::iterator_range<iterator> host_line_prefix;    
+    boost::iterator_range<iterator> host_line_prefix;
 
     reenter (*conn_)
-    {   
+    {
         if (!ec)
             ycout << "connected to bb server: " << conn_->bbhost_ << ":" << conn_->bbport_;
         else
@@ -162,7 +162,7 @@ void connection::handle_io::operator()(const boost::system::error_code& ec, size
         if ((g_rnd() % 2) == 0)
             conn_->start_hangup_timer(); // start timer that emulates network problems (hangups randomly)
 
-        yield async_read_until(conn_->s_, 
+        yield async_read_until(conn_->s_,
                 conn_->buf_, boost::regex("\n\r?\n"), conn_->strand_.wrap(*this));
 
         if (ec && ec != boost::asio::error::eof)
@@ -173,26 +173,26 @@ void connection::handle_io::operator()(const boost::system::error_code& ec, size
 
         host_line_prefix = boost::make_iterator_range(iterator::begin(conn_->buf_.data()),
                 iterator::begin(conn_->buf_.data()));
-        
+
         while (host_line_prefix.end() != iterator::end(conn_->buf_.data()))
         {
-            boost::iterator_range<iterator> input = 
+            boost::iterator_range<iterator> input =
                     boost::make_iterator_range(
                         host_line_prefix.end(), iterator::end(conn_->buf_.data()));
-            boost::iterator_range<iterator> line = 
-                    boost::find_first(input, "\n");     
-                   
+            boost::iterator_range<iterator> line =
+                    boost::find_first(input, "\n");
+
             // Look for Host: ..
             if ( boost::istarts_with(boost::make_iterator_range(
-                    host_line_prefix.end(), line.end()), "Host:"))          
-                break;      
+                    host_line_prefix.end(), line.end()), "Host:"))
+                break;
             host_line_prefix = boost::make_iterator_range(host_line_prefix.begin(), line.end());
         }
 
         if (host_line_prefix.end() == iterator::end(conn_->buf_.data()))
         {
             // No Host:. Send the request as is.
-            yield conn_->bb_s_.async_write_some(conn_->buf_.data(), 
+            yield conn_->bb_s_.async_write_some(conn_->buf_.data(),
                     conn_->strand_.wrap(*this));
 
             if (ec)
@@ -201,11 +201,11 @@ void connection::handle_io::operator()(const boost::system::error_code& ec, size
                 return;
             }
 
-            conn_->buf_.consume(sz);        
+            conn_->buf_.consume(sz);
         }
         else
-        {              
-            yield conn_->bb_s_.async_write_some(boost::asio::buffer(conn_->buf_.data() + 
+        {
+            yield conn_->bb_s_.async_write_some(boost::asio::buffer(conn_->buf_.data() +
                             (host_line_prefix.begin() - iterator::begin(conn_->buf_.data())),
                             host_line_prefix.end() - host_line_prefix.begin()),
                     conn_->strand_.wrap(*this));
@@ -222,11 +222,11 @@ void connection::handle_io::operator()(const boost::system::error_code& ec, size
             // Send the rest of the request
             if (!ec)
             {
-                boost::iterator_range<iterator> input = 
+                boost::iterator_range<iterator> input =
                         boost::make_iterator_range(
-                            iterator::begin(conn_->buf_.data()), iterator::end(conn_->buf_.data()));            
-                boost::iterator_range<iterator> line = 
-                        boost::find_first(input, "\n"); 
+                            iterator::begin(conn_->buf_.data()), iterator::end(conn_->buf_.data()));
+                boost::iterator_range<iterator> line =
+                        boost::find_first(input, "\n");
                 conn_->buf_.consume(line.end() - host_line_prefix.end());
             }
 
@@ -234,9 +234,9 @@ void connection::handle_io::operator()(const boost::system::error_code& ec, size
             {
                 yield conn_->bb_s_.async_write_some(conn_->buf_.data(),
                         conn_->strand_.wrap(*this));
-                conn_->buf_.consume(sz);                
+                conn_->buf_.consume(sz);
             }
-            
+
 
             if (ec)
             {
@@ -247,8 +247,8 @@ void connection::handle_io::operator()(const boost::system::error_code& ec, size
 
         while (!ec)
         {
-            yield async_read_until(conn_->bb_s_, 
-                    conn_->buf_, std::string("\n"), conn_->strand_.wrap(*this));     
+            yield async_read_until(conn_->bb_s_,
+                    conn_->buf_, std::string("\n"), conn_->strand_.wrap(*this));
 
             if (ec && ec != boost::asio::error::eof)
             {
@@ -258,7 +258,7 @@ void connection::handle_io::operator()(const boost::system::error_code& ec, size
 
             if (ec == boost::asio::error::eof)
             {
-                yield conn_->s_.async_write_some(conn_->buf_.data(), 
+                yield conn_->s_.async_write_some(conn_->buf_.data(),
                         conn_->strand_.wrap(*this));
                 return;
             }
@@ -268,18 +268,18 @@ void connection::handle_io::operator()(const boost::system::error_code& ec, size
                 // start another timer that emulates network problems (lags randomly)
                 if ((g_rnd() % 17) == 0)
                 {
-                    conn_->timer2_.expires_from_now(boost::posix_time::milliseconds( g_rnd() % 300 ));    
+                    conn_->timer2_.expires_from_now(boost::posix_time::milliseconds( g_rnd() % 300 ));
                     yield conn_->timer2_.async_wait(
                         conn_->strand_.wrap(boost::bind(*this, boost::asio::placeholders::error, 0)));
                 }
 
-                yield async_write(conn_->s_, boost::asio::buffer(conn_->buf_.data(), 1+g_rnd() % 10), 
+                yield async_write(conn_->s_, boost::asio::buffer(conn_->buf_.data(), 1+g_rnd() % 10),
                         conn_->strand_.wrap(*this));
                 conn_->buf_.consume(sz);
             }
 
             return;
-        }       
+        }
     }
 }
 
@@ -320,7 +320,7 @@ class server
 
         // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
         boost::asio::ip::tcp::endpoint endpoint(
-            boost::asio::ip::address_v4::from_string("127.0.0.1"), p_.port);    
+            boost::asio::ip::address_v4::from_string("127.0.0.1"), p_.port);
 
         acceptor_.open(endpoint.protocol());
         acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
@@ -329,7 +329,7 @@ class server
         acceptor_.async_accept(connection_->socket(),
                 boost::bind(&server::handle_accept, this,
                         boost::asio::placeholders::error));
-    }    
+    }
 
     void stop();
 };
@@ -338,7 +338,7 @@ int main(int argc, char** argv)
 {
     boost::asio::io_service ios;
     boost::shared_ptr<boost::asio::io_service::work> work(new boost::asio::io_service::work(ios));
- 
+
     server_parameters p;
 
     boost::program_options::options_description cmd_opt("cmd line options");
@@ -350,8 +350,8 @@ int main(int argc, char** argv)
             ("threads,s", boost::program_options::value<int>(&p.tcnt)->default_value(10), "thread count")
             ;
     boost::program_options::variables_map vm;
-    try 
-    {   
+    try
+    {
         boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmd_opt).run(), vm);
         boost::program_options::notify(vm);
         if (vm.count("help"))
@@ -369,13 +369,13 @@ int main(int argc, char** argv)
     boost::thread_group thr;
     for (int i=0; i< std::max(p.tcnt, 1); ++i)
         thr.create_thread(boost::bind(&boost::asio::io_service::run, &ios));
-    
+
 
     server s(ios, p);
     s.run();
 
     work.reset();
-    
+
     thr.join_all();
 
     return 0;

@@ -38,6 +38,9 @@ header_iterator_range_t::iterator parse_header(header_iterator_range_t header, h
             while (pos != end && isspace(*pos))
                 ++pos;
 
+            if (pos == end)
+                break;
+
             if (*pos != ':')
             {
                 // Humm...does not seem to be a valid header line.
@@ -87,6 +90,8 @@ header_iterator_range_t::iterator parse_header(header_iterator_range_t header, h
                         ++pos;
                     }
 
+                    if (pos == end)
+                        break;
                     c = *pos;
 
                     // Handle the case of folded lines

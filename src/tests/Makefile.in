@@ -38,14 +38,15 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = resolv$(EXEEXT) spf$(EXEEXT) spool$(EXEEXT) \
 	client1$(EXEEXT) client2$(EXEEXT) client3$(EXEEXT) \
-	tormoz$(EXEEXT) tormoz2$(EXEEXT) bbproxy$(EXEEXT)
+	tormoz$(EXEEXT) tormoz2$(EXEEXT) bbproxy$(EXEEXT) \
+	buffers$(EXEEXT) gr$(EXEEXT)
 subdir = src/tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/m4/ax_cxx_check_lib.m4 \
-	$(top_srcdir)/m4/ac_boost_base.m4 \
-	$(top_srcdir)/m4/ac_boost_thread.m4 \
+	$(top_srcdir)/m4/ax_boost_base.m4 \
+	$(top_srcdir)/m4/ax_boost_thread.m4 \
 	$(top_srcdir)/m4/ax_boost_system.m4 \
 	$(top_srcdir)/m4/ax_boost_program_options.m4 \
 	$(top_srcdir)/m4/ax_lib_expat.m4 $(top_srcdir)/configure.in
@@ -58,6 +59,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_bbproxy_OBJECTS = bbproxy.$(OBJEXT) ylog.$(OBJEXT)
 bbproxy_OBJECTS = $(am_bbproxy_OBJECTS)
 bbproxy_DEPENDENCIES =
+am_buffers_OBJECTS = buffers.$(OBJEXT)
+buffers_OBJECTS = $(am_buffers_OBJECTS)
+buffers_DEPENDENCIES =
 am_client1_OBJECTS = client1.$(OBJEXT) ylog.$(OBJEXT)
 client1_OBJECTS = $(am_client1_OBJECTS)
 client1_DEPENDENCIES =
@@ -67,6 +71,12 @@ client2_DEPENDENCIES =
 am_client3_OBJECTS = client3.$(OBJEXT) ylog.$(OBJEXT)
 client3_OBJECTS = $(am_client3_OBJECTS)
 client3_DEPENDENCIES =
+am_gr_OBJECTS = gr.$(OBJEXT) greylisting.$(OBJEXT) \
+	basic_rc_client.$(OBJEXT) rc.pb.$(OBJEXT) \
+	header_parser.$(OBJEXT)
+gr_OBJECTS = $(am_gr_OBJECTS)
+am__DEPENDENCIES_1 =
+gr_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_resolv_OBJECTS = resolv.$(OBJEXT) ylog.$(OBJEXT)
 resolv_OBJECTS = $(am_resolv_OBJECTS)
 resolv_DEPENDENCIES =
@@ -94,13 +104,14 @@ LTCXXCOMPILE = $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(bbproxy_SOURCES) $(client1_SOURCES) $(client2_SOURCES) \
-	$(client3_SOURCES) $(resolv_SOURCES) $(spf_SOURCES) \
+SOURCES = $(bbproxy_SOURCES) $(buffers_SOURCES) $(client1_SOURCES) \
+	$(client2_SOURCES) $(client3_SOURCES) $(gr_SOURCES) \
+	$(resolv_SOURCES) $(spf_SOURCES) $(spool_SOURCES) \
+	$(tormoz_SOURCES) $(tormoz2_SOURCES)
+DIST_SOURCES = $(bbproxy_SOURCES) $(buffers_SOURCES) \
+	$(client1_SOURCES) $(client2_SOURCES) $(client3_SOURCES) \
+	$(gr_SOURCES) $(resolv_SOURCES) $(spf_SOURCES) \
 	$(spool_SOURCES) $(tormoz_SOURCES) $(tormoz2_SOURCES)
-DIST_SOURCES = $(bbproxy_SOURCES) $(client1_SOURCES) \
-	$(client2_SOURCES) $(client3_SOURCES) $(resolv_SOURCES) \
-	$(spf_SOURCES) $(spool_SOURCES) $(tormoz_SOURCES) \
-	$(tormoz2_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -164,6 +175,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
@@ -216,12 +228,14 @@ oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+protobuf_CFLAGS = @protobuf_CFLAGS@
+protobuf_LIBS = @protobuf_LIBS@
 psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-AM_CPPFLAGS = -I../
+AM_CPPFLAGS = -I../ -I../rc_clients
 AM_CXXFLAGS = -Wall
 resolv_SOURCES = resolv.cpp ylog.cpp
 resolv_LDADD = @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@
@@ -241,10 +255,16 @@ tormoz2_SOURCES = tormoz2.cpp ../atormoz.cpp ../uti.cpp ylog.cpp
 tormoz2_LDADD = @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@ -lboost_regex
 bbproxy_SOURCES = bbproxy.cpp ylog.cpp
 bbproxy_LDADD = @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@ -lboost_regex
+buffers_SOURCES = buffers.cpp
+buffers_LDADD = @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@
+gr_SOURCES = gr.cpp ../rc_clients/greylisting.cpp ../rc_clients/basic_rc_client.cpp \
+	../rc.pb.cc ../header_parser.cpp
+
+gr_LDADD = @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@ $(protobuf_LIBS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .lo .o .obj
+.SUFFIXES: .cc .cpp .lo .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -284,6 +304,9 @@ clean-noinstPROGRAMS:
 bbproxy$(EXEEXT): $(bbproxy_OBJECTS) $(bbproxy_DEPENDENCIES) 
 	@rm -f bbproxy$(EXEEXT)
 	$(CXXLINK) $(bbproxy_LDFLAGS) $(bbproxy_OBJECTS) $(bbproxy_LDADD) $(LIBS)
+buffers$(EXEEXT): $(buffers_OBJECTS) $(buffers_DEPENDENCIES) 
+	@rm -f buffers$(EXEEXT)
+	$(CXXLINK) $(buffers_LDFLAGS) $(buffers_OBJECTS) $(buffers_LDADD) $(LIBS)
 client1$(EXEEXT): $(client1_OBJECTS) $(client1_DEPENDENCIES) 
 	@rm -f client1$(EXEEXT)
 	$(CXXLINK) $(client1_LDFLAGS) $(client1_OBJECTS) $(client1_LDADD) $(LIBS)
@@ -293,6 +316,9 @@ client2$(EXEEXT): $(client2_OBJECTS) $(client2_DEPENDENCIES)
 client3$(EXEEXT): $(client3_OBJECTS) $(client3_DEPENDENCIES) 
 	@rm -f client3$(EXEEXT)
 	$(CXXLINK) $(client3_LDFLAGS) $(client3_OBJECTS) $(client3_LDADD) $(LIBS)
+gr$(EXEEXT): $(gr_OBJECTS) $(gr_DEPENDENCIES) 
+	@rm -f gr$(EXEEXT)
+	$(CXXLINK) $(gr_LDFLAGS) $(gr_OBJECTS) $(gr_LDADD) $(LIBS)
 resolv$(EXEEXT): $(resolv_OBJECTS) $(resolv_DEPENDENCIES) 
 	@rm -f resolv$(EXEEXT)
 	$(CXXLINK) $(resolv_LDFLAGS) $(resolv_OBJECTS) $(resolv_LDADD) $(LIBS)
@@ -316,10 +342,16 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atormoz.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/basic_rc_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bbproxy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/greylisting.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/header_parser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rc.pb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resolv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spool.Po@am__quote@
@@ -328,26 +360,82 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uti.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ylog.Po@am__quote@
 
-.cpp.o:
+.cc.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
 
-.cpp.obj:
+.cc.obj:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.cpp.lo:
+.cc.lo:
 @am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+greylisting.o: ../rc_clients/greylisting.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT greylisting.o -MD -MP -MF "$(DEPDIR)/greylisting.Tpo" -c -o greylisting.o `test -f '../rc_clients/greylisting.cpp' || echo '$(srcdir)/'`../rc_clients/greylisting.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/greylisting.Tpo" "$(DEPDIR)/greylisting.Po"; else rm -f "$(DEPDIR)/greylisting.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../rc_clients/greylisting.cpp' object='greylisting.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o greylisting.o `test -f '../rc_clients/greylisting.cpp' || echo '$(srcdir)/'`../rc_clients/greylisting.cpp
+
+greylisting.obj: ../rc_clients/greylisting.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT greylisting.obj -MD -MP -MF "$(DEPDIR)/greylisting.Tpo" -c -o greylisting.obj `if test -f '../rc_clients/greylisting.cpp'; then $(CYGPATH_W) '../rc_clients/greylisting.cpp'; else $(CYGPATH_W) '$(srcdir)/../rc_clients/greylisting.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/greylisting.Tpo" "$(DEPDIR)/greylisting.Po"; else rm -f "$(DEPDIR)/greylisting.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../rc_clients/greylisting.cpp' object='greylisting.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o greylisting.obj `if test -f '../rc_clients/greylisting.cpp'; then $(CYGPATH_W) '../rc_clients/greylisting.cpp'; else $(CYGPATH_W) '$(srcdir)/../rc_clients/greylisting.cpp'; fi`
+
+basic_rc_client.o: ../rc_clients/basic_rc_client.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT basic_rc_client.o -MD -MP -MF "$(DEPDIR)/basic_rc_client.Tpo" -c -o basic_rc_client.o `test -f '../rc_clients/basic_rc_client.cpp' || echo '$(srcdir)/'`../rc_clients/basic_rc_client.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/basic_rc_client.Tpo" "$(DEPDIR)/basic_rc_client.Po"; else rm -f "$(DEPDIR)/basic_rc_client.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../rc_clients/basic_rc_client.cpp' object='basic_rc_client.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o basic_rc_client.o `test -f '../rc_clients/basic_rc_client.cpp' || echo '$(srcdir)/'`../rc_clients/basic_rc_client.cpp
+
+basic_rc_client.obj: ../rc_clients/basic_rc_client.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT basic_rc_client.obj -MD -MP -MF "$(DEPDIR)/basic_rc_client.Tpo" -c -o basic_rc_client.obj `if test -f '../rc_clients/basic_rc_client.cpp'; then $(CYGPATH_W) '../rc_clients/basic_rc_client.cpp'; else $(CYGPATH_W) '$(srcdir)/../rc_clients/basic_rc_client.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/basic_rc_client.Tpo" "$(DEPDIR)/basic_rc_client.Po"; else rm -f "$(DEPDIR)/basic_rc_client.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../rc_clients/basic_rc_client.cpp' object='basic_rc_client.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o basic_rc_client.obj `if test -f '../rc_clients/basic_rc_client.cpp'; then $(CYGPATH_W) '../rc_clients/basic_rc_client.cpp'; else $(CYGPATH_W) '$(srcdir)/../rc_clients/basic_rc_client.cpp'; fi`
+
+rc.pb.o: ../rc.pb.cc
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT rc.pb.o -MD -MP -MF "$(DEPDIR)/rc.pb.Tpo" -c -o rc.pb.o `test -f '../rc.pb.cc' || echo '$(srcdir)/'`../rc.pb.cc; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rc.pb.Tpo" "$(DEPDIR)/rc.pb.Po"; else rm -f "$(DEPDIR)/rc.pb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../rc.pb.cc' object='rc.pb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o rc.pb.o `test -f '../rc.pb.cc' || echo '$(srcdir)/'`../rc.pb.cc
+
+rc.pb.obj: ../rc.pb.cc
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT rc.pb.obj -MD -MP -MF "$(DEPDIR)/rc.pb.Tpo" -c -o rc.pb.obj `if test -f '../rc.pb.cc'; then $(CYGPATH_W) '../rc.pb.cc'; else $(CYGPATH_W) '$(srcdir)/../rc.pb.cc'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rc.pb.Tpo" "$(DEPDIR)/rc.pb.Po"; else rm -f "$(DEPDIR)/rc.pb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../rc.pb.cc' object='rc.pb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o rc.pb.obj `if test -f '../rc.pb.cc'; then $(CYGPATH_W) '../rc.pb.cc'; else $(CYGPATH_W) '$(srcdir)/../rc.pb.cc'; fi`
+
+header_parser.o: ../header_parser.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT header_parser.o -MD -MP -MF "$(DEPDIR)/header_parser.Tpo" -c -o header_parser.o `test -f '../header_parser.cpp' || echo '$(srcdir)/'`../header_parser.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/header_parser.Tpo" "$(DEPDIR)/header_parser.Po"; else rm -f "$(DEPDIR)/header_parser.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../header_parser.cpp' object='header_parser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o header_parser.o `test -f '../header_parser.cpp' || echo '$(srcdir)/'`../header_parser.cpp
+
+header_parser.obj: ../header_parser.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT header_parser.obj -MD -MP -MF "$(DEPDIR)/header_parser.Tpo" -c -o header_parser.obj `if test -f '../header_parser.cpp'; then $(CYGPATH_W) '../header_parser.cpp'; else $(CYGPATH_W) '$(srcdir)/../header_parser.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/header_parser.Tpo" "$(DEPDIR)/header_parser.Po"; else rm -f "$(DEPDIR)/header_parser.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../header_parser.cpp' object='header_parser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o header_parser.obj `if test -f '../header_parser.cpp'; then $(CYGPATH_W) '../header_parser.cpp'; else $(CYGPATH_W) '$(srcdir)/../header_parser.cpp'; fi`
 
 uti.o: ../uti.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT uti.o -MD -MP -MF "$(DEPDIR)/uti.Tpo" -c -o uti.o `test -f '../uti.cpp' || echo '$(srcdir)/'`../uti.cpp; \
@@ -376,6 +464,27 @@ atormoz.obj: ../atormoz.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../atormoz.cpp' object='atormoz.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o atormoz.obj `if test -f '../atormoz.cpp'; then $(CYGPATH_W) '../atormoz.cpp'; else $(CYGPATH_W) '$(srcdir)/../atormoz.cpp'; fi`
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.cpp.lo:
+@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -35,8 +35,8 @@ int main(int argc, char** argv)
             ("domain,d", boost::program_options::value<string>(&p.domain), "smtp hello")
             ;
     boost::program_options::variables_map vm;
-    try 
-    {   
+    try
+    {
         boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmd_opt).run(), vm);
         boost::program_options::notify(vm);
         if (vm.count("help") /*|| !vm.count("domain") */)
@@ -50,15 +50,15 @@ int main(int argc, char** argv)
         cerr << "bad options: " << e.what() << endl;
         return -1;
     }
-    
-    boost::thread thread1(boost::bind(&boost::asio::io_service::run, &ios));   
-    boost::thread thread2(boost::bind(&boost::asio::io_service::run, &ios));   
+
+    boost::thread thread1(boost::bind(&boost::asio::io_service::run, &ios));
+    boost::thread thread2(boost::bind(&boost::asio::io_service::run, &ios));
 
     boost::posix_time::ptime tm = boost::posix_time::microsec_clock::local_time();
 
     if (vm.count("domain") || vm.count("from"))
         async_check_SPF(ios, p, boost::protect(boost::bind(handle_spf_check, p, _1, _2)));
-    else 
+    else
     {
         string host;
         while (getline(cin, host))
@@ -71,7 +71,7 @@ int main(int argc, char** argv)
         }
     }
     work.reset();
-    
+
     thread1.join();
     thread2.join();
 

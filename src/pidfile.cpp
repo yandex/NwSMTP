@@ -15,13 +15,13 @@ bool pid_file::create(const std::string& _file_name)
     {
         return false;
     }
-    
+
     m_pid_file_name = _file_name;
-    
+
     std::ofstream s(m_pid_file_name.c_str());
-    
+
     s << getpid() << std::endl;
-    
+
     return s.good();
 }
 
@@ -31,6 +31,6 @@ bool pid_file::unlink()
     {
         return ::unlink(m_pid_file_name.c_str());
     }
-    
+
     return false;
 }

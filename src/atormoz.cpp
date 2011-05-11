@@ -7,7 +7,7 @@ boost::optional<rc_result> parse_rc_response(const boost::asio::streambuf& buf)
     const_buffers_type buffers = buf.data();
     iterator begin = iterator::begin(buffers);
     iterator end = iterator::end(buffers);
-    
+
     // Look for the start of the body of the response
     boost::iterator_range<const char*> delim = boost::as_literal("\r\n\r\n");
     std::pair<iterator, bool> result = boost::asio::detail::partial_search(
@@ -18,26 +18,26 @@ boost::optional<rc_result> parse_rc_response(const boost::asio::streambuf& buf)
 
         // Skip a line
         delim = boost::as_literal("\r\n");
-        result = boost::asio::detail::partial_search(start, end, 
+        result = boost::asio::detail::partial_search(start, end,
                 delim.begin(), delim.end());
         if (result.first != end && result.second)
         {
-            // todo: we can optimise parsing here 
+            // todo: we can optimise parsing here
             std::string d;
-            start = result.first + delim.size(); 
+            start = result.first + delim.size();
             std::copy(start, end, std::back_inserter(d));
 
-            rc_result res;          
-            try 
+            rc_result res;
+            try
             {
                 std::istringstream iss(d);
-                iss >> res.ok;  
+                iss >> res.ok;
                 iss >> res.sum1;
                 iss >> res.sum2;
-                iss >> res.sum3;                
-                iss >> res.sum4;         
+                iss >> res.sum3;
+                iss >> res.sum4;
             }
-            catch (...) 
+            catch (...)
             {
                 return boost::optional<rc_result>();
             }
@@ -45,7 +45,7 @@ boost::optional<rc_result> parse_rc_response(const boost::asio::streambuf& buf)
             return boost::optional<rc_result>(res);
         }
     }
-    
+
     // No match. The response is invalid.
     return boost::optional<rc_result>();
 }

@@ -1,7 +1,7 @@
-AM_CPPFLAGS = -I../
+AM_CPPFLAGS = -I../ -I../rc_clients
 AM_CXXFLAGS = -Wall
 
-noinst_PROGRAMS = resolv spf spool client1 client2 client3 tormoz tormoz2 bbproxy
+noinst_PROGRAMS = resolv spf spool client1 client2 client3 tormoz tormoz2 bbproxy buffers gr
 
 resolv_SOURCES = resolv.cpp ylog.cpp
 resolv_LDADD = @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@
@@ -29,3 +29,10 @@ tormoz2_LDADD = @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB
 
 bbproxy_SOURCES = bbproxy.cpp ylog.cpp
 bbproxy_LDADD = @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@ -lboost_regex
+
+buffers_SOURCES = buffers.cpp
+buffers_LDADD = @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@
+
+gr_SOURCES = gr.cpp ../rc_clients/greylisting.cpp ../rc_clients/basic_rc_client.cpp \
+	../rc.pb.cc ../header_parser.cpp
+gr_LDADD = @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@ $(protobuf_LIBS)

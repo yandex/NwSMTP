@@ -21,10 +21,10 @@ class spf_check
 
   public:
     spf_check();
-    
+
     template <class Handle>
     void start(boost::asio::io_service& ios, const spf_parameters& p, Handle handle);
-    
+
     void stop();
 
     bool is_inprogress() const;

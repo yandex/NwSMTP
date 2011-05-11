@@ -8,70 +8,94 @@
 #include "server.h"
 #include "log.h"
 
-server::server(const server_parameters::remote_point &_listen_point, std::size_t _io_service_pool_size,  uid_t _user, gid_t _group)
-        : m_acceptor(m_io_service),
-          ssl_context_(m_io_service, boost::asio::ssl::context::sslv23),
-          m_new_connection(new smtp_connection(m_io_service, m_connection_manager, ssl_context_)),
+server::server(std::size_t _io_service_pool_size,  uid_t _user, gid_t _group)
+        : ssl_context_(m_io_service, boost::asio::ssl::context::sslv23),
           m_io_service_pool_size(_io_service_pool_size)
 {
 
-    boost::asio::ip::tcp::resolver resolver(m_acceptor.io_service());
-    boost::asio::ip::tcp::resolver::query query(_listen_point.m_host_name, boost::lexical_cast<std::string>(_listen_point.m_port));
-    boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
-  
     if (g_config.m_use_tls)
     {
         try
         {
-            //  ssl_context_.set_options(boost::asio::ssl::context::default_workarounds);
-            ssl_context_.set_verify_mode (boost::asio::ssl::context::verify_peer | boost::asio::ssl::context::verify_client_once);
-        
+            //            ssl_context_.set_verify_mode (boost::asio::ssl::context::verify_peer | boost::asio::ssl::context::verify_client_once);
+            ssl_context_.set_verify_mode (asio::ssl::context::verify_none);
+
+            ssl_context_.set_options (
+                asio::ssl::context::default_workarounds
+                | asio::ssl::context::no_sslv2 );
+
+
+            if (!g_config.m_tls_cert_file.empty())
+            {
+                ssl_context_.use_certificate_chain_file(g_config.m_tls_cert_file);
+            }
             if (!g_config.m_tls_key_file.empty())
             {
                 ssl_context_.use_private_key_file(g_config.m_tls_key_file, boost::asio::ssl::context::pem);
             }
-
-            if (!g_config.m_tls_cert_file.empty())
-            {
-                ssl_context_.use_certificate_file(g_config.m_tls_cert_file, boost::asio::ssl::context::pem);
-            }
-
-            /*          if (!g_config.m_tls_ca_file.empty())
-                        {
-                        ssl_context_.use_certificate_chain_file(g_config.m_tls_ca_file);
-                        }*/
         }
         catch (std::exception const& e)
-        {       
-            g_log.msg(MSG_CRITICAL, str(boost::format("Can't load TLS certificate file: file='%1%', error='%2%'") % g_config.m_tls_key_file % e.what()));
-            throw;
+        {
+            throw std::runtime_error(str(boost::format("Can't load TLS key / certificate file: file='%1%', error='%2%'") % g_config.m_tls_key_file % e.what()));
         }
     }
-  
-    m_new_connection.reset(new smtp_connection(m_io_service, m_connection_manager, ssl_context_));
-  
-    m_acceptor.open(endpoint.protocol());
-    m_acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-    m_acceptor.bind(endpoint);
-    m_acceptor.listen();
+
+    std::for_each(g_config.m_listen_points.begin(), g_config.m_listen_points.end(),
+            boost::bind(&server::setup_acceptor, this, _1, false)
+                  );
+
+    if (g_config.m_use_tls)
+        std::for_each(g_config.m_ssl_listen_points.begin(), g_config.m_ssl_listen_points.end(),
+                boost::bind(&server::setup_acceptor, this, _1, true)
+                      );
+
+    if ( acceptors_.empty() )
+    {
+        throw std::logic_error("No address to bind to!");
+    }
 
     if (_group && (setgid(_group) == -1))
     {
-        g_log.msg(MSG_CRITICAL, "can not change process group id !");    
+        g_log.msg(MSG_CRITICAL, "Cannot change process group id !");
         throw std::exception();
     }
 
     if (_user && (setuid(_user) == -1))
     {
-        g_log.msg(MSG_CRITICAL, "can not change process user id !");    
+        g_log.msg(MSG_CRITICAL, "Cannot change process user id !");
         throw std::exception();
     }
-  
-    m_acceptor.async_accept(
-        m_new_connection->socket(), 
-        boost::bind(&server::handle_accept, this, boost::asio::placeholders::error)
-        );
+
 }
+
+bool server::setup_acceptor(const std::string& address, bool ssl)
+{
+    std::string::size_type pos = address.find(":");
+
+    if (pos == std::string::npos)
+        return false;
+
+    boost::asio::ip::tcp::resolver resolver(m_io_service);
+    boost::asio::ip::tcp::resolver::query query(address.substr(0,pos), address.substr(pos+1));
+    boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
+
+    smtp_connection_ptr connection;
+    connection.reset(new smtp_connection(m_io_service, m_connection_manager, ssl_context_));
+
+    boost::shared_ptr<boost::asio::ip::tcp::acceptor> acceptor( new boost::asio::ip::tcp::acceptor(m_io_service) );
+    acceptors_.push_front(acceptor);
+
+    acceptor->open(endpoint.protocol());
+    acceptor->set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+    acceptor->bind(endpoint);
+    acceptor->listen();
+
+    acceptor->async_accept(connection->socket(),
+            boost::bind(&server::handle_accept, this, acceptors_.begin(), connection, ssl,  boost::asio::placeholders::error)
+                           );
+    return true;
+}
+
 
 void server::run()
 {
@@ -83,50 +107,44 @@ void server::stop()
 {
     boost::mutex::scoped_lock lock(m_mutex);
 
-    m_new_connection.reset();
-    m_acceptor.close();
+    std::for_each(acceptors_.begin(), acceptors_.end(), boost::bind(&acceptor_ptr::value_type::close, _1));
 
     lock.unlock();
 
     m_threads_pool.join_all();
+    acceptors_.clear();
 }
 
-void server::handle_accept(const boost::system::error_code& e)
+void server::handle_accept(acceptor_list::iterator acceptor, smtp_connection_ptr _connection, bool _force_ssl, const boost::system::error_code& e)
 {
     boost::mutex::scoped_lock lock(m_mutex);
 
-    bool stopping = m_new_connection.get() == 0;
-    if (e == boost::asio::error::operation_aborted || stopping)
-        return;  
-    
-    if (!e)
-    {  
-        try 
-        {
-            assert(m_new_connection.get());
-            m_new_connection->start();
-            m_new_connection.reset(
-                new smtp_connection(m_io_service, m_connection_manager, ssl_context_)
-                );
+    if (e == boost::asio::error::operation_aborted)
+        return;
 
-        }       
+    if (!e)
+    {
+        try
+        {
+            _connection->start( _force_ssl );
+
+        }
         catch(boost::system::system_error &e)
         {
             if (e.code() != boost::asio::error::not_connected)
             {
                 g_log.msg(MSG_NORMAL, str(boost::format("Accept exception: %1%") % e.what()));
             }
-        
-            m_new_connection.reset(new smtp_connection(m_io_service, m_connection_manager, ssl_context_));
         }
+        _connection.reset(new smtp_connection(m_io_service, m_connection_manager, ssl_context_));
     }
     else
     {
         if (e != boost::asio::error::not_connected)
-            g_log.msg(MSG_NORMAL, str(boost::format("Accept error: %1%") % e.message()));       
+            g_log.msg(MSG_NORMAL, str(boost::format("Accept error: %1%") % e.message()));
     }
-  
-    m_acceptor.async_accept(m_new_connection->socket(),
-            boost::bind(&server::handle_accept, this, boost::asio::placeholders::error)
-                            );  
+
+    (*acceptor)->async_accept(_connection->socket(),
+            boost::bind(&server::handle_accept, this, acceptor, _connection, _force_ssl, boost::asio::placeholders::error)
+                           );
 }

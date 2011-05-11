@@ -4,6 +4,7 @@
 #include <string>
 #include <boost/asio.hpp>
 
+std::string trim(const std::string &_str); // smtp_connection.cpp
 
 std::string cleanup_str(const std::string &_str);
 

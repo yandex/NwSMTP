@@ -42,8 +42,8 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_pthread.m4 \
 	$(top_srcdir)/m4/ax_cxx_check_lib.m4 \
-	$(top_srcdir)/m4/ac_boost_base.m4 \
-	$(top_srcdir)/m4/ac_boost_thread.m4 \
+	$(top_srcdir)/m4/ax_boost_base.m4 \
+	$(top_srcdir)/m4/ax_boost_thread.m4 \
 	$(top_srcdir)/m4/ax_boost_system.m4 \
 	$(top_srcdir)/m4/ax_boost_program_options.m4 \
 	$(top_srcdir)/m4/ax_lib_expat.m4 $(top_srcdir)/configure.in
@@ -55,9 +55,11 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
-am_nwsmtp_OBJECTS = nwsmtp-main.$(OBJEXT) nwsmtp-options.$(OBJEXT) \
-	nwsmtp-server.$(OBJEXT) nwsmtp-smtp_connection.$(OBJEXT) \
-	nwsmtp-log.$(OBJEXT) nwsmtp-switchcfg.$(OBJEXT) \
+am__objects_1 = nwsmtp-rc.pb.$(OBJEXT)
+am_nwsmtp_OBJECTS = $(am__objects_1) nwsmtp-main.$(OBJEXT) \
+	nwsmtp-options.$(OBJEXT) nwsmtp-server.$(OBJEXT) \
+	nwsmtp-smtp_connection.$(OBJEXT) nwsmtp-log.$(OBJEXT) \
+	nwsmtp-switchcfg.$(OBJEXT) \
 	nwsmtp-smtp_connection_manager.$(OBJEXT) nwsmtp-rbl.$(OBJEXT) \
 	nwsmtp-envelope.$(OBJEXT) nwsmtp-rfc_date.$(OBJEXT) \
 	nwsmtp-uti.$(OBJEXT) nwsmtp-bb_client_rcpt.$(OBJEXT) \
@@ -65,12 +67,14 @@ am_nwsmtp_OBJECTS = nwsmtp-main.$(OBJEXT) nwsmtp-options.$(OBJEXT) \
 	nwsmtp-so_client.$(OBJEXT) nwsmtp-avir_client.$(OBJEXT) \
 	nwsmtp-aliases.$(OBJEXT) nwsmtp-smtp_client.$(OBJEXT) \
 	nwsmtp-pidfile.$(OBJEXT) nwsmtp-timer.$(OBJEXT) \
-	nwsmtp-param_parser.$(OBJEXT) nwsmtp-eom_parser.$(OBJEXT) \
-	nwsmtp-header_parser.$(OBJEXT) nwsmtp-ip_options.$(OBJEXT) \
-	nwsmtp-rfc822date.$(OBJEXT) nwsmtp-atormoz.$(OBJEXT) \
-	nwsmtp-adkim.$(OBJEXT) nwsmtp-auth.$(OBJEXT) \
-	nwsmtp-bb_client_auth.$(OBJEXT) \
-	nwsmtp-smtp_connection_auth.$(OBJEXT)
+	nwsmtp-param_parser.$(OBJEXT) nwsmtp-header_parser.$(OBJEXT) \
+	nwsmtp-ip_options.$(OBJEXT) nwsmtp-rfc822date.$(OBJEXT) \
+	nwsmtp-atormoz.$(OBJEXT) nwsmtp-adkim.$(OBJEXT) \
+	nwsmtp-auth.$(OBJEXT) nwsmtp-bb_client_auth.$(OBJEXT) \
+	nwsmtp-smtp_connection_auth.$(OBJEXT) \
+	nwsmtp-bb_client_mailfrom.$(OBJEXT) \
+	nwsmtp-smtp_connection_mailfrom.$(OBJEXT) \
+	nwsmtp-basic_rc_client.$(OBJEXT) nwsmtp-greylisting.$(OBJEXT)
 nwsmtp_OBJECTS = $(am_nwsmtp_OBJECTS)
 nwsmtp_DEPENDENCIES =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -157,6 +161,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
@@ -209,6 +214,8 @@ oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+protobuf_CFLAGS = @protobuf_CFLAGS@
+protobuf_LIBS = @protobuf_LIBS@
 psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
@@ -216,21 +223,31 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 AM_CPPFLAGS = -I$(top_srcdir)
 AM_CXXFLAGS = -Wall
+protocol_headers = rc.pb.h
+protocol_sources = rc.pb.cc
 nwsmtp_CFLAGS = @EXPAT_CFLAGS@
-nwsmtp_CPPFLAGS = @BOOST_CPPFLAGS@
-nwsmtp_LDFLAGS = @BOOST_LDFLAGS@ @EXPAT_LDFLAGS@
-nwsmtp_LDADD = -lexpat -lopendkim @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@
-nwsmtp_SOURCES = main.cpp options.cpp server.cpp \
+nwsmtp_CPPFLAGS = @BOOST_CPPFLAGS@ $(protobuf_CFLAGS)
+nwsmtp_LDFLAGS = @BOOST_LDFLAGS@ @EXPAT_LDFLAGS@ $(protobuf_LIBS)
+nwsmtp_LDADD = -lexpat -lopendkim @BOOST_PROGRAM_OPTIONS_LIB@\
+	@BOOST_THREAD_LIB@ @BOOST_SYSTEM_LIB@
+
+nwsmtp_SOURCES = $(protocol_sources) main.cpp options.cpp server.cpp \
 	smtp_connection.cpp log.cpp switchcfg.cpp smtp_connection_manager.cpp\
 	rbl.cpp envelope.cpp rfc_date.cpp uti.cpp bb_client_rcpt.cpp http_client.cpp bb_parser.cpp\
-	so_client.cpp avir_client.cpp aliases.cpp smtp_client.cpp pidfile.cpp timer.cpp param_parser.cpp\
-	eom_parser.cpp header_parser.cpp ip_options.cpp rfc822date.c atormoz.cpp adkim.cpp auth.cpp\
-	bb_client_auth.cpp smtp_connection_auth.cpp
+	so_client.cpp avir_client.cpp aliases.cpp smtp_client.cpp pidfile.cpp timer.cpp\
+	param_parser.cpp header_parser.cpp ip_options.cpp rfc822date.c atormoz.cpp adkim.cpp\
+	 auth.cpp bb_client_auth.cpp smtp_connection_auth.cpp bb_client_mailfrom.cpp\
+	smtp_connection_mailfrom.cpp rc_clients/basic_rc_client.cpp\
+	rc_clients/greylisting.cpp
 
+CLEANFILES = $(protocol_headers) $(protocol_sources)
+SUFFIXES = .proto .pb.cc
+PROTOC = protoc
+PROTOC_ARGS = -I. --cpp_out=.
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .lo .o .obj
+.SUFFIXES: .proto .pb.cc .c .cc .cpp .lo .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -303,11 +320,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-atormoz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-auth.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-avir_client.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-basic_rc_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-bb_client_auth.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-bb_client_mailfrom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-bb_client_rcpt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-bb_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-envelope.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-eom_parser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-greylisting.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-header_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-http_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-ip_options.Po@am__quote@
@@ -317,12 +336,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-param_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-pidfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-rbl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-rc.pb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-rfc822date.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-rfc_date.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-server.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-smtp_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-smtp_connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-smtp_connection_auth.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-smtp_connection_mailfrom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-smtp_connection_manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-so_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nwsmtp-switchcfg.Po@am__quote@
@@ -364,26 +385,40 @@ nwsmtp-rfc822date.obj: rfc822date.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(nwsmtp_CFLAGS) $(CFLAGS) -c -o nwsmtp-rfc822date.obj `if test -f 'rfc822date.c'; then $(CYGPATH_W) 'rfc822date.c'; else $(CYGPATH_W) '$(srcdir)/rfc822date.c'; fi`
 
-.cpp.o:
+.cc.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
 
-.cpp.obj:
+.cc.obj:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-.cpp.lo:
+.cc.lo:
 @am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+nwsmtp-rc.pb.o: rc.pb.cc
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-rc.pb.o -MD -MP -MF "$(DEPDIR)/nwsmtp-rc.pb.Tpo" -c -o nwsmtp-rc.pb.o `test -f 'rc.pb.cc' || echo '$(srcdir)/'`rc.pb.cc; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-rc.pb.Tpo" "$(DEPDIR)/nwsmtp-rc.pb.Po"; else rm -f "$(DEPDIR)/nwsmtp-rc.pb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='rc.pb.cc' object='nwsmtp-rc.pb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-rc.pb.o `test -f 'rc.pb.cc' || echo '$(srcdir)/'`rc.pb.cc
+
+nwsmtp-rc.pb.obj: rc.pb.cc
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-rc.pb.obj -MD -MP -MF "$(DEPDIR)/nwsmtp-rc.pb.Tpo" -c -o nwsmtp-rc.pb.obj `if test -f 'rc.pb.cc'; then $(CYGPATH_W) 'rc.pb.cc'; else $(CYGPATH_W) '$(srcdir)/rc.pb.cc'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-rc.pb.Tpo" "$(DEPDIR)/nwsmtp-rc.pb.Po"; else rm -f "$(DEPDIR)/nwsmtp-rc.pb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='rc.pb.cc' object='nwsmtp-rc.pb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-rc.pb.obj `if test -f 'rc.pb.cc'; then $(CYGPATH_W) 'rc.pb.cc'; else $(CYGPATH_W) '$(srcdir)/rc.pb.cc'; fi`
 
 nwsmtp-main.o: main.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-main.o -MD -MP -MF "$(DEPDIR)/nwsmtp-main.Tpo" -c -o nwsmtp-main.o `test -f 'main.cpp' || echo '$(srcdir)/'`main.cpp; \
@@ -679,20 +714,6 @@ nwsmtp-param_parser.obj: param_parser.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-param_parser.obj `if test -f 'param_parser.cpp'; then $(CYGPATH_W) 'param_parser.cpp'; else $(CYGPATH_W) '$(srcdir)/param_parser.cpp'; fi`
 
-nwsmtp-eom_parser.o: eom_parser.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-eom_parser.o -MD -MP -MF "$(DEPDIR)/nwsmtp-eom_parser.Tpo" -c -o nwsmtp-eom_parser.o `test -f 'eom_parser.cpp' || echo '$(srcdir)/'`eom_parser.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-eom_parser.Tpo" "$(DEPDIR)/nwsmtp-eom_parser.Po"; else rm -f "$(DEPDIR)/nwsmtp-eom_parser.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='eom_parser.cpp' object='nwsmtp-eom_parser.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-eom_parser.o `test -f 'eom_parser.cpp' || echo '$(srcdir)/'`eom_parser.cpp
-
-nwsmtp-eom_parser.obj: eom_parser.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-eom_parser.obj -MD -MP -MF "$(DEPDIR)/nwsmtp-eom_parser.Tpo" -c -o nwsmtp-eom_parser.obj `if test -f 'eom_parser.cpp'; then $(CYGPATH_W) 'eom_parser.cpp'; else $(CYGPATH_W) '$(srcdir)/eom_parser.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-eom_parser.Tpo" "$(DEPDIR)/nwsmtp-eom_parser.Po"; else rm -f "$(DEPDIR)/nwsmtp-eom_parser.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='eom_parser.cpp' object='nwsmtp-eom_parser.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-eom_parser.obj `if test -f 'eom_parser.cpp'; then $(CYGPATH_W) 'eom_parser.cpp'; else $(CYGPATH_W) '$(srcdir)/eom_parser.cpp'; fi`
-
 nwsmtp-header_parser.o: header_parser.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-header_parser.o -MD -MP -MF "$(DEPDIR)/nwsmtp-header_parser.Tpo" -c -o nwsmtp-header_parser.o `test -f 'header_parser.cpp' || echo '$(srcdir)/'`header_parser.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-header_parser.Tpo" "$(DEPDIR)/nwsmtp-header_parser.Po"; else rm -f "$(DEPDIR)/nwsmtp-header_parser.Tpo"; exit 1; fi
@@ -790,6 +811,83 @@ nwsmtp-smtp_connection_auth.obj: smtp_connection_auth.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='smtp_connection_auth.cpp' object='nwsmtp-smtp_connection_auth.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-smtp_connection_auth.obj `if test -f 'smtp_connection_auth.cpp'; then $(CYGPATH_W) 'smtp_connection_auth.cpp'; else $(CYGPATH_W) '$(srcdir)/smtp_connection_auth.cpp'; fi`
+
+nwsmtp-bb_client_mailfrom.o: bb_client_mailfrom.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-bb_client_mailfrom.o -MD -MP -MF "$(DEPDIR)/nwsmtp-bb_client_mailfrom.Tpo" -c -o nwsmtp-bb_client_mailfrom.o `test -f 'bb_client_mailfrom.cpp' || echo '$(srcdir)/'`bb_client_mailfrom.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-bb_client_mailfrom.Tpo" "$(DEPDIR)/nwsmtp-bb_client_mailfrom.Po"; else rm -f "$(DEPDIR)/nwsmtp-bb_client_mailfrom.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='bb_client_mailfrom.cpp' object='nwsmtp-bb_client_mailfrom.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-bb_client_mailfrom.o `test -f 'bb_client_mailfrom.cpp' || echo '$(srcdir)/'`bb_client_mailfrom.cpp
+
+nwsmtp-bb_client_mailfrom.obj: bb_client_mailfrom.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-bb_client_mailfrom.obj -MD -MP -MF "$(DEPDIR)/nwsmtp-bb_client_mailfrom.Tpo" -c -o nwsmtp-bb_client_mailfrom.obj `if test -f 'bb_client_mailfrom.cpp'; then $(CYGPATH_W) 'bb_client_mailfrom.cpp'; else $(CYGPATH_W) '$(srcdir)/bb_client_mailfrom.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-bb_client_mailfrom.Tpo" "$(DEPDIR)/nwsmtp-bb_client_mailfrom.Po"; else rm -f "$(DEPDIR)/nwsmtp-bb_client_mailfrom.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='bb_client_mailfrom.cpp' object='nwsmtp-bb_client_mailfrom.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-bb_client_mailfrom.obj `if test -f 'bb_client_mailfrom.cpp'; then $(CYGPATH_W) 'bb_client_mailfrom.cpp'; else $(CYGPATH_W) '$(srcdir)/bb_client_mailfrom.cpp'; fi`
+
+nwsmtp-smtp_connection_mailfrom.o: smtp_connection_mailfrom.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-smtp_connection_mailfrom.o -MD -MP -MF "$(DEPDIR)/nwsmtp-smtp_connection_mailfrom.Tpo" -c -o nwsmtp-smtp_connection_mailfrom.o `test -f 'smtp_connection_mailfrom.cpp' || echo '$(srcdir)/'`smtp_connection_mailfrom.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-smtp_connection_mailfrom.Tpo" "$(DEPDIR)/nwsmtp-smtp_connection_mailfrom.Po"; else rm -f "$(DEPDIR)/nwsmtp-smtp_connection_mailfrom.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='smtp_connection_mailfrom.cpp' object='nwsmtp-smtp_connection_mailfrom.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-smtp_connection_mailfrom.o `test -f 'smtp_connection_mailfrom.cpp' || echo '$(srcdir)/'`smtp_connection_mailfrom.cpp
+
+nwsmtp-smtp_connection_mailfrom.obj: smtp_connection_mailfrom.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-smtp_connection_mailfrom.obj -MD -MP -MF "$(DEPDIR)/nwsmtp-smtp_connection_mailfrom.Tpo" -c -o nwsmtp-smtp_connection_mailfrom.obj `if test -f 'smtp_connection_mailfrom.cpp'; then $(CYGPATH_W) 'smtp_connection_mailfrom.cpp'; else $(CYGPATH_W) '$(srcdir)/smtp_connection_mailfrom.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-smtp_connection_mailfrom.Tpo" "$(DEPDIR)/nwsmtp-smtp_connection_mailfrom.Po"; else rm -f "$(DEPDIR)/nwsmtp-smtp_connection_mailfrom.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='smtp_connection_mailfrom.cpp' object='nwsmtp-smtp_connection_mailfrom.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-smtp_connection_mailfrom.obj `if test -f 'smtp_connection_mailfrom.cpp'; then $(CYGPATH_W) 'smtp_connection_mailfrom.cpp'; else $(CYGPATH_W) '$(srcdir)/smtp_connection_mailfrom.cpp'; fi`
+
+nwsmtp-basic_rc_client.o: rc_clients/basic_rc_client.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-basic_rc_client.o -MD -MP -MF "$(DEPDIR)/nwsmtp-basic_rc_client.Tpo" -c -o nwsmtp-basic_rc_client.o `test -f 'rc_clients/basic_rc_client.cpp' || echo '$(srcdir)/'`rc_clients/basic_rc_client.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-basic_rc_client.Tpo" "$(DEPDIR)/nwsmtp-basic_rc_client.Po"; else rm -f "$(DEPDIR)/nwsmtp-basic_rc_client.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='rc_clients/basic_rc_client.cpp' object='nwsmtp-basic_rc_client.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-basic_rc_client.o `test -f 'rc_clients/basic_rc_client.cpp' || echo '$(srcdir)/'`rc_clients/basic_rc_client.cpp
+
+nwsmtp-basic_rc_client.obj: rc_clients/basic_rc_client.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-basic_rc_client.obj -MD -MP -MF "$(DEPDIR)/nwsmtp-basic_rc_client.Tpo" -c -o nwsmtp-basic_rc_client.obj `if test -f 'rc_clients/basic_rc_client.cpp'; then $(CYGPATH_W) 'rc_clients/basic_rc_client.cpp'; else $(CYGPATH_W) '$(srcdir)/rc_clients/basic_rc_client.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-basic_rc_client.Tpo" "$(DEPDIR)/nwsmtp-basic_rc_client.Po"; else rm -f "$(DEPDIR)/nwsmtp-basic_rc_client.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='rc_clients/basic_rc_client.cpp' object='nwsmtp-basic_rc_client.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-basic_rc_client.obj `if test -f 'rc_clients/basic_rc_client.cpp'; then $(CYGPATH_W) 'rc_clients/basic_rc_client.cpp'; else $(CYGPATH_W) '$(srcdir)/rc_clients/basic_rc_client.cpp'; fi`
+
+nwsmtp-greylisting.o: rc_clients/greylisting.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-greylisting.o -MD -MP -MF "$(DEPDIR)/nwsmtp-greylisting.Tpo" -c -o nwsmtp-greylisting.o `test -f 'rc_clients/greylisting.cpp' || echo '$(srcdir)/'`rc_clients/greylisting.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-greylisting.Tpo" "$(DEPDIR)/nwsmtp-greylisting.Po"; else rm -f "$(DEPDIR)/nwsmtp-greylisting.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='rc_clients/greylisting.cpp' object='nwsmtp-greylisting.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-greylisting.o `test -f 'rc_clients/greylisting.cpp' || echo '$(srcdir)/'`rc_clients/greylisting.cpp
+
+nwsmtp-greylisting.obj: rc_clients/greylisting.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nwsmtp-greylisting.obj -MD -MP -MF "$(DEPDIR)/nwsmtp-greylisting.Tpo" -c -o nwsmtp-greylisting.obj `if test -f 'rc_clients/greylisting.cpp'; then $(CYGPATH_W) 'rc_clients/greylisting.cpp'; else $(CYGPATH_W) '$(srcdir)/rc_clients/greylisting.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nwsmtp-greylisting.Tpo" "$(DEPDIR)/nwsmtp-greylisting.Po"; else rm -f "$(DEPDIR)/nwsmtp-greylisting.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='rc_clients/greylisting.cpp' object='nwsmtp-greylisting.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nwsmtp_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nwsmtp-greylisting.obj `if test -f 'rc_clients/greylisting.cpp'; then $(CYGPATH_W) 'rc_clients/greylisting.cpp'; else $(CYGPATH_W) '$(srcdir)/rc_clients/greylisting.cpp'; fi`
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.cpp.lo:
+@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -900,6 +998,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -971,6 +1070,12 @@ uninstall-am: uninstall-info-am uninstall-sbinPROGRAMS
 	tags uninstall uninstall-am uninstall-info-am \
 	uninstall-sbinPROGRAMS
 
+
+.proto.pb.cc :
+	$(AM_V_GEN)$(PROTOC) $(PROTOC_ARGS) $<
+
+.proto.pb.h :
+	$(AM_V_GEN)$(PROTOC) $(PROTOC_ARGS) $<
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -1,228 +1,211 @@
 #ifndef RC_CHECK_H
 #define RC_CHECK_H
 
-#include <string>
+#include <boost/asio/handler_invoke_hook.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/function.hpp>
+#include <boost/lexical_cast.hpp>
+#include <string>
 #include "socket_pool_service.h"
 #include "atormoz.h"
 #include "uti.h"
 
-class rc_check 
+class rc_check
         : public boost::enable_shared_from_this<rc_check>
 {
   public:
-    typedef std::vector< std::pair<std::string, 
+    typedef std::vector< std::pair<std::string,
                                    boost::asio::ip::tcp::endpoint> > rclist;
 
   private:
-    //    typedef boost::asio::basic_stream_socket<boost::asio::ip::tcp, 
-    //  socket_pool_service<boost::asio::ip::tcp> > socket_type;        
-    typedef boost::asio::ip::tcp::socket socket_type;
     boost::asio::io_service& ios_;
-    socket_type sock_;
-    boost::asio::deadline_timer t_;
     std::string email_;
-    std::string host_;
     rc_parameters p_;
     rclist l_;
     rclist::iterator lit_;
     unsigned long ukeyh_;
-    boost::asio::io_service::strand strand_;
     int timeout_;
-    bool stop_pending_;
-  
+    typedef boost::asio::ip::tcp::socket socket_type;
+    struct request;
+    boost::weak_ptr<request> lastreq_;
+
     enum rc_op { GET, PUT};
 
-    template <class Handler>
+    static unsigned long get_uid_hash(const std::string& uid)
+    {
+	union
+	{
+	    unsigned char bytes[sizeof (long long int)];
+	    long long int lli;
+	} uuid;
+	uuid.lli = atoll(uid.c_str());
+	return djb2_hash(uuid.bytes, sizeof(uuid.bytes));
+    };
+
     struct request
     {
+        typedef boost::asio::ip::tcp::socket socket_type;
+        typedef boost::function<void (const boost::system::error_code&,
+                               boost::optional<rc_result>)> Handler;
         Handler handler;
         rc_op op;
         bool done;
-        boost::weak_ptr<rc_check> q;    
-
-        request(Handler h, rc_op o, boost::weak_ptr<rc_check> qq)
+        socket_type socket;
+        boost::asio::deadline_timer t;
+        boost::asio::io_service::strand strand;
+        boost::weak_ptr<rc_check> q;
+        request(boost::asio::io_service& ios, Handler h, rc_op o, boost::weak_ptr<rc_check> d)
                 : handler(h),
                   op(o),
                   done(false),
-                  q(qq)
+                  socket(ios),
+                  t(ios),
+                  strand(ios),
+                  q(d)
         {
         }
     };
 
-    template <class Handler>
     class handle_done
     {
         int attempt_;
-        boost::shared_ptr<request<Handler> > req_;
+        boost::shared_ptr<request> req_;
 
       public:
-        handle_done(int attempt, boost::shared_ptr<request<Handler> > req)
+        handle_done(int attempt, boost::shared_ptr<request> req)
                 : attempt_(attempt), req_(req)
         {
         }
 
-        void operator()(const boost::system::error_code& ec, boost::optional<rc_result> rc)
+        void operator()(const boost::system::error_code& ec,
+                        boost::optional<rc_result> rc = boost::optional<rc_result>())
         {
-            if (req_->q.expired() || req_->done)
+            if (req_->done)
                 return;
 
-            else if (ec == boost::asio::error::operation_aborted)
+            if (!ec) // timeout or success, depending on rc
             {
                 boost::shared_ptr<rc_check> q = req_->q.lock();
-                if (q->stop_pending_)
-                    q->do_stop();
-                return;
-            }
+                if (!q)
+                    return;
 
-            boost::shared_ptr<rc_check> q = req_->q.lock();
-            q->cancel();
-
-            while (true)
-            {
-                if (!rc)
+                if (rc)
                 {
-                    int hcount = q->l_.size();
-                    bool fail = (attempt_ > 0) || // already a second attempt => rc fail
-                            (hcount < 2); // no more rc hosts => rc fail
-                    if (fail)
-                        break;
-
-                    // try with another host
-                    //              ycout << q->this_ << "\t:rc::handle_done(): try with another host"; // ###
-                    rclist::iterator newlit = q->l_.begin() + q->ukeyh_ % (hcount -1);
-                    while (newlit == q->lit_)
-                    {
-                        if (++newlit == q->l_.end())
-                            newlit = q->l_.begin();        
-                    }
-                    q->lit_ = newlit;
-                    q->host_ = q->lit_->first;
-                    if (req_->op == GET)
-                        return q->get_helper(req_, ++attempt_);
-                    else
-                        return q->put_helper(req_, ++attempt_);
+                    handle_stop h(req_);
+                    h();
+                    return q->ios_.post(boost::bind(req_->handler, ec, rc));
                 }
-                break;
             }
-
-            /* ycout << q->this_ << "\t:rc::handle_done(): posting completion handler: email=" << q->email_ << ", ec=" << ec.message();  // ### */
-            req_->done = true;      
-            q->do_stop();
-            q->ios_.post(boost::bind(req_->handler, ec, rc));
-        }
-    };  
-
-    template <class Handler>
-    class handle_timeout
-    {
-        boost::shared_ptr<request<Handler> > req_;
-
-      public:
-        handle_timeout(boost::shared_ptr<request<Handler> > req)
-                : req_(req)
-        {
-        }
-
-        void operator()(const boost::system::error_code& ec)
-        {
-            if (req_->q.expired() || req_->done) 
+            else if (ec == boost::asio::error::operation_aborted)
                 return;
 
             boost::shared_ptr<rc_check> q = req_->q.lock();
+            if (!q)
+                return;
 
-            if (ec != boost::asio::error::operation_aborted)
+            handle_stop h(req_);
+            h();
+
+            // the last request failed
+            if  ((attempt_ == 0)         // already a second attempt => fail
+                 && (q->l_.size() > 1))      // no more rc hosts => fail
             {
-                req_->done = true;
-                q->stop();
-                q->ios_.post(boost::bind(req_->handler, boost::asio::error::timed_out, 
-                                boost::optional<rc_result>()));
-            }       
+                // try with another host
+                rclist::iterator newlit = q->lit_;
+                if (++newlit == q->l_.end())
+                    newlit = q->l_.begin();
+                q->lit_ = newlit;
+                boost::shared_ptr<request> newreq(new request(q->ios_, req_->handler, req_->op, q));
+                return newreq->op == GET
+                        ? q->get_helper(newreq, ++attempt_)
+                        : q->put_helper(newreq, ++attempt_);
+            }
+            q->ios_.post(boost::bind(req_->handler, ec, rc));
         }
     };
 
-    template <class Handler>
-    void get_helper(boost::shared_ptr<request<Handler> > req, int attempt)
-    {    
-        //      ycout << this_ << "\t:async_rc_get: email=" << email_ << ", att=" << attempt; // ###    
-        async_rc_get(sock_, lit_->second, p_, 
-                strand_.wrap(handle_done<Handler>(attempt, req)));
-        t_.expires_from_now(boost::posix_time::seconds(timeout_)); 
-        t_.async_wait(strand_.wrap(handle_timeout<Handler>(req)));
-    }
-
-    template <class Handler>
-    void put_helper(boost::shared_ptr<request<Handler> > req, int attempt)
-    {   
-        /*      ycout << this_ << "\t" << boost::posix_time::microsec_clock::local_time() << "\t:async_rc_put: email=" << email_ << ", att=" << attempt; // ###  */
-        async_rc_put(sock_, lit_->second, p_, 
-                strand_.wrap(handle_done<Handler>(attempt, req)));
-        t_.expires_from_now(boost::posix_time::seconds(timeout_));
-        t_.async_wait(strand_.wrap(handle_timeout<Handler>(req)));
-    }
-    
-    template <class Handler> friend class handle_get;
-    template <class Handler> friend class handle_put;
-    template <class Handler> friend class handle_timeout;
-
-    void cancel()
+    void get_helper(boost::shared_ptr<request> req, int attempt)
     {
-        //      ycout << this_ << "\t:rc_check::cancel()"; // ###
-        t_.cancel();
-        try {
-            sock_.cancel();         
-        } catch (...) {}        
+        handle_done h(attempt, req);
+        lastreq_ = req;
+        async_rc_get(req->socket, lit_->second, p_, req->strand.wrap(h));
+        req->t.expires_from_now(boost::posix_time::seconds(timeout_));
+        req->t.async_wait(req->strand.wrap(h));
     }
 
-    void do_stop()
+    void put_helper(boost::shared_ptr<request> req, int attempt)
     {
-        stop_pending_ = false;
-        t_.cancel();
-        try {
-            sock_.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-            sock_.close();
-        } catch (...) {}
+        handle_done h(attempt, req);
+        lastreq_ = req;
+        async_rc_put(req->socket, lit_->second, p_, req->strand.wrap(h));
+        req->t.expires_from_now(boost::posix_time::seconds(timeout_));
+        req->t.async_wait(req->strand.wrap(h));
     }
+
+    friend class handle_get;
+    friend class handle_put;
+    friend class handle_timeout;
+
+    class handle_stop
+    {
+      public:
+        boost::shared_ptr<request> req;
+
+        explicit handle_stop(boost::shared_ptr<request> r)
+                : req(r)
+        {
+        }
+
+        void operator()() const
+        {
+            if (req->done)
+                return;
+
+            req->done = true;
+            try
+            {
+                req->t.cancel();
+                req->done = true;
+                req->socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+                req->socket.close();
+            }
+            catch (...) {}
+        }
+    };
 
   public:
-    rc_check(boost::asio::io_service& ios, const std::string& email, const std::string& uid, const rclist& list, int timeout)
-            : ios_(ios), sock_(ios), 
-              t_(ios), email_(email), 
-              l_(list), strand_(ios), 
-              timeout_(timeout),
-              stop_pending_(false)
+    rc_check(boost::asio::io_service& ios, const std::string& email,
+            const std::string& uid, const rclist& list, int timeout)
+            : ios_(ios),
+              email_(email),
+              l_(list),
+              timeout_(timeout)
     {
         // get rc host endpoint for this recipient
-        union 
-        {
-            unsigned char bytes[sizeof uid];
-            long long unsigned int lli;
-        } uuid;
-
-        uuid.lli = atol(uid.c_str());    
-        ukeyh_ = djb2_hash(uuid.bytes, sizeof(uuid.bytes));
+        ukeyh_ = get_uid_hash(uid);
         int idx = (ukeyh_ % l_.size());
         lit_ = l_.begin() + idx;
         p_.ukey = uid;
         parse_email(email, p_.login, p_.domain);
-        host_ = lit_->first;
     }
 
     void stop()
-    {   
-        stop_pending_ = true; 
-        sock_.get_io_service().post( 
-            strand_.wrap(bind(&rc_check::cancel, shared_from_this())));
+    {
+        if (boost::shared_ptr<request> req = lastreq_.lock())
+        {
+            handle_stop h(req);
+            ios_.post(req->strand.wrap(h));
+        }
     }
 
-    inline const rc_parameters& get_parameters() const 
+    inline const rc_parameters& get_parameters() const
     {   return p_;   }
 
     inline const std::string& get_hostname() const
-    {   return host_;   }
+    {   return lit_->first;   }
 
-    const std::string& get_email() const 
+    const std::string& get_email() const
     {   return email_;  }
 
     template <class Handler>
@@ -231,8 +214,10 @@ class rc_check
         int idx = (ukeyh_ % l_.size());
         lit_ = l_.begin() + idx;
 
-        boost::shared_ptr<request<Handler> > req(new request<Handler>(handler, GET, shared_from_this()));
-        get_helper(req, 0);
+        boost::shared_ptr<request> req(
+            new request(ios_, handler, GET, shared_from_this()));
+        ios_.post(req->strand.wrap(
+            boost::bind(&rc_check::get_helper, shared_from_this(), req, 0)));
     }
 
     template <class Handler>
@@ -242,11 +227,11 @@ class rc_check
         lit_ = l_.begin() + idx;
 
         p_.size = boost::lexical_cast<std::string>(size);
-        boost::shared_ptr<request<Handler> > req(new request<Handler>(handler, PUT, shared_from_this()));
-        put_helper(req, 0);
+        boost::shared_ptr<request> req(
+            new request(ios_, handler, PUT, shared_from_this()));
+        ios_.post(req->strand.wrap(
+            boost::bind(&rc_check::put_helper, shared_from_this(), req, 0)));
     }
 };
 
-
 #endif //RC_CHECK_H
-

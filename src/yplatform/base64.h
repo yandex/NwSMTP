@@ -56,7 +56,7 @@ class decoder: public decoder_impl
             IteratorOut fo);
 };
 
-  
+
 template <typename IteratorIn, typename IteratorOut>
 IteratorOut
 decoder::decode (IteratorIn& in_char, IteratorIn const& in_last,

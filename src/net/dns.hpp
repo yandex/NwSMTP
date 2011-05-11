@@ -1645,9 +1645,9 @@ class txt_resource : public resource_base_t
             string d;
             buffer.get(len);
             buffer.get(d, len);
-            rr_text += d;       
+            rr_text += d;
             i -= (len+1);
-        }       
+        }
         buffer.position(savedpos + rr_len);
     }
 
@@ -1989,7 +1989,7 @@ class message
 
   private:
     /// Header bytes of the message
-    uint8_t               header[sizeof(opaque_header)];
+    opaque_header header;
 
     /// Question list
     questions_t question_section;
@@ -2086,8 +2086,8 @@ class message
     */
     const uint16_t id(const uint16_t d)
     {
-        ((opaque_header*)header)->Id = d;
-        return  ((opaque_header*)header)->Id;
+        header.Id = d;
+        return  header.Id;
     }
 
     /*!
@@ -2097,7 +2097,7 @@ class message
     */
     const uint16_t id() const
     {
-        return  ((opaque_header*)header)->Id;
+        return  header.Id;
     }
 
     /*!
@@ -2109,10 +2109,10 @@ class message
     const action_t action(const action_t e)
     {
         (e == query) ?
-                ((opaque_header*)header)->bit_fields &= ~0x8000 :
-                ((opaque_header*)header)->bit_fields |= 0x8000;
+                header.bit_fields &= ~0x8000 :
+                header.bit_fields |= 0x8000;
 
-        return (action_t)(((opaque_header*)header)->bit_fields & 0x8000);
+        return (action_t)(header.bit_fields & 0x8000);
     }
 
     /*!
@@ -2122,7 +2122,7 @@ class message
     */
     const action_t action() const
     {
-        return (action_t)(((opaque_header*)header)->bit_fields & 0x8000);
+        return (action_t)(header.bit_fields & 0x8000);
     }
 
 
@@ -2137,21 +2137,21 @@ class message
         switch( oc )
         {
             case squery:
-                ((opaque_header*)header)->bit_fields &= ~0x3000;
+                header.bit_fields &= ~0x3000;
                 return squery;
             case iquery:
-                ((opaque_header*)header)->bit_fields |= 0x1000;
+                header.bit_fields |= 0x1000;
                 return iquery;
             case status:
-                ((opaque_header*)header)->bit_fields |= 0x2000;
+                header.bit_fields |= 0x2000;
                 return status;
             case no_opcode:
                 break;
         }
 
-        if( ((opaque_header*)header)->bit_fields & 0x1000 )
+        if( header.bit_fields & 0x1000 )
             return iquery;
-        if( ((opaque_header*)header)->bit_fields & 0x2000 )
+        if( header.bit_fields & 0x2000 )
             return status;
 
         return squery;
@@ -2164,9 +2164,9 @@ class message
     */
     const opcode_t  opcode() const
     {
-        if( ((opaque_header*)header)->bit_fields & 0x1000 )
+        if( header.bit_fields & 0x1000 )
             return iquery;
-        if( ((opaque_header*)header)->bit_fields & 0x2000 )
+        if( header.bit_fields & 0x2000 )
             return status;
 
         return squery;
@@ -2181,8 +2181,8 @@ class message
     */
     void  authority(const bool authority)
     {
-        (authority) ? ((opaque_header*)header)->bit_fields |= 0x400 :
-                ((opaque_header*)header)->bit_fields &= ~0x400;
+        (authority) ? header.bit_fields |= 0x400 :
+                header.bit_fields &= ~0x400;
     }
 
     /*!
@@ -2192,7 +2192,7 @@ class message
     */
     const bool is_authority() const
     {
-        return( ((opaque_header*)header)->bit_fields & 0x400 );
+        return( header.bit_fields & 0x400 );
     }
 
     /*!
@@ -2205,8 +2205,8 @@ class message
     */
     void  truncated(const bool truncated)
     {
-        (truncated) ? ((opaque_header*)header)->bit_fields |= 0x200 :
-                ((opaque_header*)header)->bit_fields &= ~0x200;
+        (truncated) ? header.bit_fields |= 0x200 :
+                header.bit_fields &= ~0x200;
     }
 
     /*!
@@ -2214,7 +2214,7 @@ class message
 
       \return True if the server is truncating the message
     */
-    const bool is_truncated() const  { return( ((opaque_header*)header)->bit_fields & 0x200 ); }
+    const bool is_truncated() const  { return( header.bit_fields & 0x200 ); }
 
     /*!
       Sets the 'recursive' field.
@@ -2227,8 +2227,8 @@ class message
     */
     void  recursive(const bool recursive)
     {
-        (recursive) ? ((opaque_header*)header)->bit_fields |= 0x100 :
-                ((opaque_header*)header)->bit_fields &= ~0x100;
+        (recursive) ? header.bit_fields |= 0x100 :
+                header.bit_fields &= ~0x100;
     }
 
     /*!
@@ -2236,7 +2236,7 @@ class message
 
       \return True if the server can recursively seek an answer.
     */
-    const bool is_recursive() const  { return( ((opaque_header*)header)->bit_fields & 0x100 ); }
+    const bool is_recursive() const  { return( header.bit_fields & 0x100 ); }
 
     /*!
       Sets the 'recursion availability' field.
@@ -2249,8 +2249,8 @@ class message
     */
     void  recursion_avail(const bool recursion_avail)
     {
-        (recursion_avail) ? ((opaque_header*)header)->bit_fields |= 0x80 :
-                ((opaque_header*)header)->bit_fields &= ~0x80;
+        (recursion_avail) ? header.bit_fields |= 0x80 :
+                header.bit_fields &= ~0x80;
     }
 
     /*!
@@ -2260,7 +2260,7 @@ class message
     */
     const bool is_recursion_avail() const
     {
-        return( ((opaque_header*)header)->bit_fields & 0x80 );
+        return( header.bit_fields & 0x80 );
     }
 
     /*!
@@ -2274,30 +2274,30 @@ class message
         switch( r )
         {
             case noerror:
-                ((opaque_header*)header)->bit_fields &= ~0x07;
+                header.bit_fields &= ~0x07;
                 break;
 
             default:
-                ((opaque_header*)header)->bit_fields |= r;
+                header.bit_fields |= r;
                 break;
         }
 
-        if( ((opaque_header*)header)->bit_fields & 0x01 )
+        if( header.bit_fields & 0x01 )
             return format_error;
 
-        if( ((opaque_header*)header)->bit_fields & 0x02 )
+        if( header.bit_fields & 0x02 )
             return server_error;
 
-        if( ((opaque_header*)header)->bit_fields & 0x03 )
+        if( header.bit_fields & 0x03 )
             return name_error;
 
-        if( ((opaque_header*)header)->bit_fields & 0x04 )
+        if( header.bit_fields & 0x04 )
             return not_implemented;
 
-        if( ((opaque_header*)header)->bit_fields & 0x05 )
+        if( header.bit_fields & 0x05 )
             return refused;
 
-        if( ((opaque_header*)header)->bit_fields & 0x06 )
+        if( header.bit_fields & 0x06 )
             return no_result;
 
         return noerror;
@@ -2310,22 +2310,22 @@ class message
     */
     const result_t result() const
     {
-        if( ((opaque_header*)header)->bit_fields & 0x01 )
+        if( header.bit_fields & 0x01 )
             return format_error;
 
-        if( ((opaque_header*)header)->bit_fields & 0x02 )
+        if( header.bit_fields & 0x02 )
             return server_error;
 
-        if( ((opaque_header*)header)->bit_fields & 0x03 )
+        if( header.bit_fields & 0x03 )
             return name_error;
 
-        if( ((opaque_header*)header)->bit_fields & 0x04 )
+        if( header.bit_fields & 0x04 )
             return not_implemented;
 
-        if( ((opaque_header*)header)->bit_fields & 0x05 )
+        if( header.bit_fields & 0x05 )
             return refused;
 
-        if( ((opaque_header*)header)->bit_fields & 0x06 )
+        if( header.bit_fields & 0x06 )
             return no_result;
 
         return noerror;
@@ -2351,8 +2351,8 @@ class message
 
         rfc1035_414_t offset_map;
 
-        buffer.put( ((opaque_header*)header)->Id );
-        buffer.put( ((opaque_header*)header)->bit_fields );
+        buffer.put( header.Id );
+        buffer.put( header.bit_fields );
         buffer.put( (uint16_t)question_section.size() );
         buffer.put( (uint16_t)answer_section.size() );
         buffer.put( (uint16_t)authority_section.size() );
@@ -2379,7 +2379,7 @@ class message
     {
         try
         {
-    
+
             // clean out the different sections
             question_section.erase(question_section.begin(), question_section.end());
             answer_section.erase(answer_section.begin(), answer_section.end());
@@ -2389,32 +2389,30 @@ class message
             // start at 0th
             buffer.position(0);
 
-            opaque_header*      pHeader = (opaque_header*)header;
-
-            buffer.get( pHeader->Id );
-            buffer.get( pHeader->bit_fields );
-            buffer.get( pHeader->QdCount );
-            buffer.get( pHeader->AnCount );
-            buffer.get( pHeader->NsCount );
-            buffer.get( pHeader->ArCount );
+            buffer.get( header.Id );
+            buffer.get( header.bit_fields );
+            buffer.get( header.QdCount );
+            buffer.get( header.AnCount );
+            buffer.get( header.NsCount );
+            buffer.get( header.ArCount );
 
             rfc1035_414_t offset_map;
 
             // read the sections
-            for( uint16_t i = 0; i < pHeader->QdCount; ++ i )
+            for( uint16_t i = 0; i < header.QdCount; ++ i )
                 question_section.push_back( question(buffer, offset_map) );
 
-            for( uint16_t i = 0; i < pHeader->AnCount; ++ i )
+            for( uint16_t i = 0; i < header.AnCount; ++ i )
                 answer_section.push_back( unpack_record(buffer,offset_map) );
 
-            for( uint16_t i = 0; i < pHeader->NsCount; ++ i )
+            for( uint16_t i = 0; i < header.NsCount; ++ i )
                 authority_section.push_back( unpack_record(buffer,offset_map) );
 
-            for( uint16_t i = 0; i < pHeader->ArCount; ++ i )
+            for( uint16_t i = 0; i < header.ArCount; ++ i )
                 additional_section.push_back( unpack_record(buffer,offset_map) );
         }
         catch (...)
-        {       
+        {
             result( server_error );
         }
     }

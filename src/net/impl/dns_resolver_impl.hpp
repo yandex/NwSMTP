@@ -395,13 +395,13 @@ class dns_resolver_impl : public boost::enable_shared_from_this<dns_resolver_imp
                     && tmpMessage.answers()->size() )
             {
                 iterator_type iter = iterator_type::create(*tmpMessage.answers(), dq->_question.rtype());
-                if (iter != iterator_type())      
-                    dq->_completion_callback->invoke( _ios, iter, boost::system::error_code() );                          
+                if (iter != iterator_type())
+                {
+                    dq->_completion_callback->invoke( _ios, iter, boost::system::error_code() );
+                    return;
+                }
             }
-            else
-            {
-                dq->_completion_callback->invoke( _ios, iterator_type(), error::not_found );
-            }
+            dq->_completion_callback->invoke( _ios, iterator_type(), error::not_found );            
         }
     }
 

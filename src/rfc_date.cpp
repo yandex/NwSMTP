@@ -15,14 +15,14 @@
 std::string mail_date(time_t when)
 {
     std::string collect;
-    
+
     struct tm *lt;
     struct tm gmt;
     int     gmtoff;
 
     gmt = *gmtime(&when);
     lt = localtime(&when);
-    
+
     gmtoff = (lt->tm_hour - gmt.tm_hour) * HOUR_MIN + lt->tm_min - gmt.tm_min;
     if (lt->tm_year < gmt.tm_year)
         gmtoff -= DAY_MIN;
@@ -39,27 +39,27 @@ std::string mail_date(time_t when)
 
 
     char buffer[100];
-    
+
     memset(buffer, 0, sizeof(buffer));
-    
+
     strftime(buffer, sizeof(buffer)-1, STRFTIME_FMT, lt);
-    
+
     collect = buffer;
 
     if (gmtoff < -DAY_MIN || gmtoff > DAY_MIN)
     {
-        // error 
+        // error
     }
-    
+
     memset(buffer, 0, sizeof(buffer));
-    
+
     snprintf(buffer, sizeof(buffer)-1, "%+03d%02d", (int) (gmtoff / HOUR_MIN), (int) (abs(gmtoff) % HOUR_MIN));
-    
+
     collect.append(buffer);
-    
+
     memset(buffer, 0, sizeof(buffer));
-    
+
     strftime(buffer, sizeof(buffer)-1, " (%Z)", lt);
-        
+
     return collect;
 }

@@ -36,8 +36,8 @@ struct state
     typedef socket_type::endpoint_type endpoint_type;
 
     state(boost::asio::io_service& ios, int req, const client_parameters& p)
-            : s_(ios), 
-              strand_(ios), 
+            : s_(ios),
+              strand_(ios),
               req_(req),
               p_(p),
               starttm_(boost::posix_time::microsec_clock::local_time())
@@ -58,23 +58,23 @@ struct state
 };
 
 inline ylog_t::helper logw(const boost::shared_ptr<state>& st)
-{   return ycout << "[" << st->num_ << "]:\t" << 
+{   return ycout << "[" << st->num_ << "]:\t" <<
             boost::posix_time::microsec_clock::local_time() - st->starttm_ << ":\t>>\t"; }
 
 inline ylog_t::helper logr(const boost::shared_ptr<state>& st)
-{   return ycout << "[" << st->num_ << "]:\t" << 
+{   return ycout << "[" << st->num_ << "]:\t" <<
             boost::posix_time::microsec_clock::local_time() - st->starttm_ << ":\t<<\t"; }
 
 inline ylog_t::helper logrerr(const boost::shared_ptr<state>& st)
-{   return ycout << "[" << st->num_ << "]:\t" 
+{   return ycout << "[" << st->num_ << "]:\t"
                  << boost::posix_time::microsec_clock::local_time() - st->starttm_ << ":\t(!)\tread error:"; }
 
 inline ylog_t::helper logwerr(const boost::shared_ptr<state>& st)
-{   return ycout << "[" << st->num_ << "]:\t" 
+{   return ycout << "[" << st->num_ << "]:\t"
                  << boost::posix_time::microsec_clock::local_time() - st->starttm_ << ":\t(!)\twrite error:"; }
 
 inline ylog_t::helper logstat(const boost::shared_ptr<state>& st)
-{   return ycout << "[" << st->num_ << "]:\t" 
+{   return ycout << "[" << st->num_ << "]:\t"
                  << boost::posix_time::microsec_clock::local_time() - st->starttm_ << ":\t(*)\t"; }
 
 unsigned int gen_seed()
@@ -87,7 +87,7 @@ class yrand
     unsigned int seed_;
     boost::mutex mux_;
 
-  public: 
+  public:
     explicit yrand(unsigned int seed = gen_seed())
             : seed_(seed)
     {}
@@ -127,7 +127,7 @@ struct handle_read_message
         {
             logrerr(st) << ec;
             return try_again(st, h);
-        } 
+        }
         typedef boost::asio::streambuf::const_buffers_type const_buffers_type;
         typedef boost::asio::buffers_iterator<const_buffers_type> iterator;
         const_buffers_type buffers = st->buf_.data();
@@ -142,7 +142,7 @@ struct handle_read_message
             if ((g_rnd() % 5) == 0)
                 st->s_.close();
         } catch (...) {}
-        return try_again(st, h);                
+        return try_again(st, h);
     }
 };
 
@@ -153,10 +153,10 @@ struct handle_write_message
     Handle h;
     typedef boost::array<char, 4096> block_t;
     typedef boost::shared_ptr<std::pair<std::ifstream, block_t > > d_t;
-    d_t d;    
+    d_t d;
 
     bool step()
-    {   
+    {
         ifstream& fs = d->first;
         block_t& b = d->second;
         if (fs && !fs.eof())
@@ -182,7 +182,7 @@ struct handle_write_message
         {
             logwerr(st) << ec;
             return try_again(st, h);
-        }       
+        }
         if ( d && !step() )
         {
             handle_read_message<Handle> handle = { st, h };
@@ -203,7 +203,7 @@ struct handle_read_data
         {
             logrerr(st) << ec;
             return try_again(st, h);
-        } 
+        }
         typedef boost::asio::streambuf::const_buffers_type const_buffers_type;
         typedef boost::asio::buffers_iterator<const_buffers_type> iterator;
         const_buffers_type buffers = st->buf_.data();
@@ -222,7 +222,7 @@ struct handle_read_data
 
         if (done && st->p_.filenames.size() > 0)
         {
-            // Start sending a message      
+            // Start sending a message
             size_t maxidx = st->p_.filenames.size();
             std::vector<std::string>::const_iterator fname_it = st->p_.filenames.begin() + (g_rnd() % maxidx);
             typedef typename handle_write_message<Handle>::block_t block_t;
@@ -235,7 +235,7 @@ struct handle_read_data
         else
         {
             return try_again(st, h);
-        }       
+        }
     }
 };
 
@@ -251,8 +251,8 @@ struct handle_write_data
         {
             logwerr(st) << ec.message();
             return try_again(st, h);
-        }       
-        
+        }
+
         handle_read_data<Handle> handle = { st, h };
         boost::asio::async_read_until(st->s_, st->buf_, std::string("\r\n"), st->strand_.wrap(handle));
     }
@@ -273,7 +273,7 @@ struct handle_read_rcptto
         {
             logrerr(st) << ec;
             return try_again(st, h);
-        } 
+        }
         typedef boost::asio::streambuf::const_buffers_type const_buffers_type;
         typedef boost::asio::buffers_iterator<const_buffers_type> iterator;
         const_buffers_type buffers = st->buf_.data();
@@ -314,7 +314,7 @@ struct handle_read_rcptto
 
 
 template <class Handle>
-struct handle_write_rcptto 
+struct handle_write_rcptto
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -325,15 +325,15 @@ struct handle_write_rcptto
         {
             logwerr(st) << ec.message();
             return try_again(st, h);
-        }       
-        
+        }
+
         handle_read_rcptto<Handle> handle = { st, h };
         boost::asio::async_read_until(st->s_, st->buf_, std::string("\r\n"), st->strand_.wrap(handle));
     }
 };
 
 template <class Handle>
-struct send_rcpto_series 
+struct send_rcpto_series
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -342,7 +342,7 @@ struct send_rcpto_series
     {
         size_t maxidx = st->p_.recipients.size();
         const char* phrase = (st->p_.recipients.begin() + (g_rnd() % maxidx))->c_str();
-        
+
         handle_write_rcptto<Handle> handle = { st, h };
         logw(st) << phrase;
         st->s_.async_write_some(boost::asio::buffer(phrase), st->strand_.wrap(handle));
@@ -350,7 +350,7 @@ struct send_rcpto_series
 };
 
 template <class Handle>
-struct handle_read_mailfrom 
+struct handle_read_mailfrom
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -361,7 +361,7 @@ struct handle_read_mailfrom
         {
             logrerr(st) << ec.message();
             return try_again(st, h);
-        } 
+        }
         typedef boost::asio::streambuf::const_buffers_type const_buffers_type;
         typedef boost::asio::buffers_iterator<const_buffers_type> iterator;
         const_buffers_type buffers = st->buf_.data();
@@ -391,7 +391,7 @@ struct handle_read_mailfrom
 };
 
 template <class Handle>
-struct handle_write_mailfrom 
+struct handle_write_mailfrom
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -402,15 +402,15 @@ struct handle_write_mailfrom
         {
             logwerr(st) << ec.message();
             return try_again(st, h);
-        }       
-        
+        }
+
         handle_read_mailfrom<Handle> handle = { st, h };
         boost::asio::async_read_until(st->s_, st->buf_, std::string("\r\n"), st->strand_.wrap(handle));
     }
 };
 
 template <class Handle>
-struct handle_read_ehlo 
+struct handle_read_ehlo
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -419,9 +419,9 @@ struct handle_read_ehlo
     {
         if (ec)
         {
-            logrerr(st) << ec.message();        
+            logrerr(st) << ec.message();
             return try_again(st, h);
-        } 
+        }
         typedef boost::asio::streambuf::const_buffers_type const_buffers_type;
         typedef boost::asio::buffers_iterator<const_buffers_type> iterator;
         const_buffers_type buffers = st->buf_.data();
@@ -457,7 +457,7 @@ struct handle_read_ehlo
 };
 
 template <class Handle>
-struct handle_write_ehlo 
+struct handle_write_ehlo
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -468,8 +468,8 @@ struct handle_write_ehlo
         {
             logwerr(st) << ec.message();
             return try_again(st, h);
-        }       
-        
+        }
+
         handle_read_ehlo<Handle> handle = { st, h };
         boost::asio::async_read_until(st->s_, st->buf_, std::string("\r\n"), st->strand_.wrap(handle));
     }
@@ -494,14 +494,14 @@ struct handle_connect
         const char* phrase = "EHLO ctor\r\n";
         logw(st) << phrase;
         st->s_.async_write_some(boost::asio::buffer(phrase), st->strand_.wrap(handle));
-    }    
+    }
 };
 
 template <class Handle>
 void start_send_message(boost::shared_ptr<state> st, Handle h)
 {
     state::endpoint_type endpoint(
-        boost::asio::ip::address_v4::from_string(st->p_.host), st->p_.port);    
+        boost::asio::ip::address_v4::from_string(st->p_.host), st->p_.port);
     handle_connect<Handle> handle = {st, h};
     st->s_.async_connect(endpoint, handle);
 }
@@ -537,11 +537,11 @@ int main(int argc, char** argv)
             ("to,t", boost::program_options::value<std::vector<std::string> >(&p.recipients), "message recipient address")
             ;
     boost::program_options::variables_map vm;
-    try 
-    {   
+    try
+    {
         boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmd_opt).run(), vm);
         boost::program_options::notify(vm);
-        if (vm.count("help") || !vm.count("to")) 
+        if (vm.count("help") || !vm.count("to"))
         {
             ycout << cmd_opt;
             return 1;
@@ -552,7 +552,7 @@ int main(int argc, char** argv)
         cerr << "bad options: " << e.what();
         return -1;
     }
-    
+
     boost::thread_group thr;
     for (int i=0; i< std::max(p.tcnt, 1); ++i)
         thr.create_thread(boost::bind(&boost::asio::io_service::run, &ios));
@@ -567,7 +567,7 @@ int main(int argc, char** argv)
         send_message(ios, p, handle_send_message);
 
     work.reset();
-    
+
     thr.join_all();
 
     ycout << "time elapsed: " << boost::posix_time::microsec_clock::local_time()-tm;

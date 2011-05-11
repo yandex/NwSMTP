@@ -14,7 +14,7 @@
 using namespace ylog;
 using namespace std;
 
-typedef boost::asio::basic_stream_socket<boost::asio::ip::tcp, 
+typedef boost::asio::basic_stream_socket<boost::asio::ip::tcp,
                                          socket_pool_service<boost::asio::ip::tcp> > y_socket;
 
 struct spool_parameters
@@ -34,9 +34,9 @@ template <class Socket>
 void handle_read(const boost::system::error_code& ec, std::size_t sz, const boost::asio::ip::tcp::endpoint& endpoint,
         const string& request, int rpe, boost::shared_ptr<Socket> socket, boost::shared_ptr<boost::asio::streambuf> buf)
 {
-    ycout << endpoint.address() << "<< \r\n" 
+    ycout << endpoint.address() << "<< \r\n"
           << boost::make_iterator_range(boost::asio::buffers_begin(buf->data()),  boost::asio::buffers_begin(buf->data()) + sz)
-          << "--";    
+          << "--";
     make_request<Socket>(socket->get_io_service(), endpoint, request, rpe);
 }
 
@@ -47,15 +47,15 @@ void handle_write(const boost::system::error_code& ec, const boost::asio::ip::tc
 {
     if (!ec)
     {
-        //      ycout << ">>>" << endpoint.address();   
+        //      ycout << ">>>" << endpoint.address();
         boost::shared_ptr<boost::asio::streambuf> buf(new boost::asio::streambuf);
         boost::asio::async_read_until(*socket, *buf, std::string("\r\n0\r\n"),
                 boost::protect(boost::bind(handle_read<Socket>, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred,
                                 endpoint, request, rpe, socket, buf)));
     }
     else
-    {   
-        ycout << "error writing to " << endpoint;       
+    {
+        ycout << "error writing to " << endpoint;
     }
 }
 
@@ -65,13 +65,13 @@ void handle_connect(const boost::system::error_code& ec, const boost::asio::ip::
 {
     if (!ec)
     {
-        socket->async_write_some(boost::asio::buffer(request), 
+        socket->async_write_some(boost::asio::buffer(request),
                 boost::bind(handle_write<Socket>, boost::asio::placeholders::error,
                         endpoint, request, rpe, socket));
     }
     else
-    {   
-        ycout << "error connecting to " << endpoint;    
+    {
+        ycout << "error connecting to " << endpoint;
     }
 }
 
@@ -81,7 +81,7 @@ void make_request(boost::asio::io_service& ios, const boost::asio::ip::tcp::endp
 {
     if (rpe <= 0)
         return;
-     
+
     boost::shared_ptr<Socket> socket (new Socket(ios));
     socket->async_connect(endpoint, boost::bind(handle_connect<Socket>, boost::asio::placeholders::error,
                     endpoint, request, --rpe, socket));
@@ -89,13 +89,13 @@ void make_request(boost::asio::io_service& ios, const boost::asio::ip::tcp::endp
 
 void start(boost::asio::io_service& ios, const spool_parameters& p)
 {
-    typedef std::vector<boost::asio::ip::tcp::endpoint> ev_t;    
-    for (ev_t::const_iterator it=p.endpoints.begin(); it!=p.endpoints.end(); ++it)    
+    typedef std::vector<boost::asio::ip::tcp::endpoint> ev_t;
+    for (ev_t::const_iterator it=p.endpoints.begin(); it!=p.endpoints.end(); ++it)
         for (int i=0; i<p.crpe; ++i)
             if (p.socktype == 0)
-                make_request<boost::asio::ip::tcp::socket>(ios, *it, p.request, p.rpe);    
+                make_request<boost::asio::ip::tcp::socket>(ios, *it, p.request, p.rpe);
             else
-                make_request<y_socket>(ios, *it, p.request, p.rpe);    
+                make_request<y_socket>(ios, *it, p.request, p.rpe);
 }
 
 int main(int argc, char** argv)
@@ -112,8 +112,8 @@ int main(int argc, char** argv)
             ("type,t", boost::program_options::value<int>(&p.socktype)->default_value(1), "socket type to use (1: pooling socket, 0: basic socket")
             ;
     boost::program_options::variables_map vm;
-    try 
-    {   
+    try
+    {
         boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmd_opt).run(), vm);
         boost::program_options::notify(vm);
         if (vm.count("help"))
@@ -131,8 +131,8 @@ int main(int argc, char** argv)
 
     boost::shared_ptr<boost::asio::io_service::work> work(new boost::asio::io_service::work(ios));
 
-    boost::thread thread1(boost::bind(&boost::asio::io_service::run, &ios));   
-    boost::thread thread2(boost::bind(&boost::asio::io_service::run, &ios));   
+    boost::thread thread1(boost::bind(&boost::asio::io_service::run, &ios));
+    boost::thread thread2(boost::bind(&boost::asio::io_service::run, &ios));
 
     boost::posix_time::ptime tm = boost::posix_time::microsec_clock::local_time();
 
@@ -149,7 +149,7 @@ int main(int argc, char** argv)
     start(ios, p);
 
     work.reset();
-    
+
     thread1.join();
     thread2.join();
 

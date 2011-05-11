@@ -22,18 +22,18 @@ static std::string conv_cr_lf(char _ch)
 std::string cleanup_str(const std::string &_str)
 {
     std::string buffer(_str);
-    
+
     std::string::size_type pos = buffer.find_last_not_of("\r\n");
-    
+
     if (pos != std::string::npos)
     {
         buffer.erase(pos+1);
     }
-    
+
     std::ostringstream remote_filt;
-    
+
     std::transform(buffer.begin(), buffer.end(), std::ostream_iterator<std::string>(remote_filt), conv_cr_lf);
-    
+
     return remote_filt.str();
 }
 

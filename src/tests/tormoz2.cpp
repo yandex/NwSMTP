@@ -17,7 +17,7 @@ using namespace std;
 struct tormoz_parameters
 {
     int tcnt;
-    int rcnt;    
+    int rcnt;
     int rpe;
     string op;
     string host;
@@ -37,43 +37,74 @@ class tormoz_get : public boost::enable_shared_from_this<tormoz_get>,
                    public tormoz_operation
 {
     boost::asio::io_service& ios_;
-    boost::shared_ptr<rc_check> rc_;    
+    boost::asio::deadline_timer timer_;
+    boost::asio::io_service::strand strand_;
+    boost::shared_ptr<rc_check> rc_;
     const tormoz_parameters& p_;
     int count_;
+    unsigned int seed_;
   public:
     tormoz_get(boost::asio::io_service& ios, const tormoz_parameters& p)
             : ios_(ios),
+              timer_(ios),
+              strand_(ios),
               rc_(new rc_check(ios, std::string(p.pp.login).append("@").append(p.pp.domain), p.pp.ukey, p.l, 1)),
               p_(p),
               count_(p.rpe)
-    {}
+    {
+    }
 
-    void justdoit() 
-    {   
-        rc_->get(boost::bind(
-            &tormoz_get::handle_done, shared_from_this(), _1, _2)
+    void handle_timeout(const boost::system::error_code& ec)
+    {
+        if (--count_ > 0)
+        {
+            rc_->stop();
+            rc_.reset( new rc_check(timer_.io_service(), std::string(p_.pp.login).append("@").append(p_.pp.domain),
+                            p_.pp.ukey, p_.l, 1) );
+
+            timer_.expires_from_now(boost::posix_time::milliseconds(rand_r(&seed_) % 500));
+            timer_.async_wait(strand_.wrap(boost::bind(&tormoz_get::handle_timeout, shared_from_this(), _1)));
+        }
+        else if (rc_)
+        {
+            rc_->stop();
+            rc_.reset();
+        }
+    }
+
+    void justdoit()
+    {
+        rc_->get(strand_.wrap(
+            boost::bind(&tormoz_get::handle_done, shared_from_this(), _1, _2))
                  );
+        timer_.expires_from_now(boost::posix_time::milliseconds(100));
+        timer_.async_wait(strand_.wrap(boost::bind(&tormoz_get::handle_timeout, shared_from_this(), _1)));
     }
 
     void handle_done(const boost::system::error_code& ec, boost::optional<rc_result> rc)
     {
         if (rc)
         {
-            ycout << "get: [" <<
-                    p_.host << ":" << p_.port << " " <<
-                    p_.pp.ukey << ":" << p_.pp.login << ":" << 
-                    p_.pp.domain << " ] -> [" <<
-                    rc->ok << "," << rc->sum1 << "," << 
-                    rc->sum2 << "," << rc->sum3 << "," << 
-                    rc->sum4 << "]";
+//             ycout << "get: [" <<
+//                     p_.host << ":" << p_.port << " " <<
+//                     p_.pp.ukey << ":" << p_.pp.login << ":" <<
+//                     p_.pp.domain << " ] -> [" <<
+//                     rc->ok << "," << rc->sum1 << "," <<
+//                     rc->sum2 << "," << rc->sum3 << "," <<
+//                     rc->sum4 << "]";
         }
         else
         {
-            ycout << "get: error:" << ec.message();
+//             ycout << "get: error:" << ec.message();
         }
 
         if (--count_ > 0)
             justdoit();
+        else if (rc_)
+        {
+            rc_->stop();
+            rc_.reset();
+        }
     }
 };
 
@@ -92,8 +123,8 @@ class tormoz_put : public boost::enable_shared_from_this<tormoz_put>,
               count_(p.rpe)
     {}
 
-    void justdoit() 
-    {   
+    void justdoit()
+    {
         rc_->put(boost::bind(
             &tormoz_put::handle_done, shared_from_this(), _1, _2),
                 boost::lexical_cast<int>(p_.pp.size)
@@ -106,10 +137,10 @@ class tormoz_put : public boost::enable_shared_from_this<tormoz_put>,
         {
             ycout << "put: [" <<
                     p_.host << ":" << p_.port << " " <<
-                    p_.pp.ukey << ":" << p_.pp.login << ":" << 
+                    p_.pp.ukey << ":" << p_.pp.login << ":" <<
                     p_.pp.domain << " ] -> [" <<
-                    rc->ok << "," << rc->sum1 << "," << 
-                    rc->sum2 << "," << rc->sum3 << "," << 
+                    rc->ok << "," << rc->sum1 << "," <<
+                    rc->sum2 << "," << rc->sum3 << "," <<
                     rc->sum4 << "]";
         }
         else
@@ -149,20 +180,20 @@ int main(int argc, char** argv)
             ("port,p", boost::program_options::value<int>(&p.port)->default_value(8888), "tormoz port")
             ("size,z", boost::program_options::value<string>(&p.pp.size)->default_value("0"), "put size (for put)")
             ("key,k", boost::program_options::value<string>(&p.pp.ukey)->default_value("0"), "user key")
-            ("login,l", boost::program_options::value<string>(&p.pp.login)->default_value("testuser20"), "user login")  
-            ("domain,d", boost::program_options::value<string>(&p.pp.domain)->default_value("ya.ru"), "user domain")    
+            ("login,l", boost::program_options::value<string>(&p.pp.login)->default_value("testuser20"), "user login")
+            ("domain,d", boost::program_options::value<string>(&p.pp.domain)->default_value("ya.ru"), "user domain")
             ("threads,s", boost::program_options::value<int>(&p.tcnt)->default_value(2), "thread count")
             ("conseq,r", boost::program_options::value<int>(&p.rpe)->default_value(1), "number of consecutive requests per endpoint")
             ("concur,c", boost::program_options::value<int>(&p.rcnt)->default_value(1), "number of concurrent invocations of conseq requests")
             ;
     boost::program_options::variables_map vm;
-    try 
-    {   
+    try
+    {
         boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmd_opt).run(), vm);
         boost::program_options::notify(vm);
         if (vm.count("help")
-                || !vm.count("host") || !vm.count("port") 
-                || !vm.count("key") || !vm.count("login") 
+                || !vm.count("host") || !vm.count("port")
+                || !vm.count("key") || !vm.count("login")
                 || !vm.count("domain") )
         {
             cout << cmd_opt << endl;
@@ -176,13 +207,13 @@ int main(int argc, char** argv)
     }
 
     p.l.push_back(
-        std::make_pair(p.host, 
-                boost::asio::ip::tcp::endpoint( 
+        std::make_pair(p.host,
+                boost::asio::ip::tcp::endpoint(
                     boost::asio::ip::address_v4::from_string(p.host),
                     p.port)
-                       )        
+                       )
         );
-    
+
     boost::thread_group thr;
     for (int i=0; i< std::max(p.tcnt, 1); ++i)
         thr.create_thread(boost::bind(&boost::asio::io_service::run, &ios));
@@ -193,7 +224,7 @@ int main(int argc, char** argv)
         create_tormoz_operation(ios, p)->justdoit();
 
     work.reset();
-    
+
     thr.join_all();
 
     cout << "time elapsed: " << boost::posix_time::microsec_clock::local_time()-tm << endl;

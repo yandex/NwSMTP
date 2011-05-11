@@ -9,7 +9,7 @@
 using namespace std;
 using namespace y::net;
 
-struct resolv_parameters 
+struct resolv_parameters
 {
     resolv_parameters()
             : type(0),
@@ -24,7 +24,7 @@ struct resolv_parameters
 
 class resolver
 {
-  public:    
+  public:
     virtual void resolve(string)=0;
     virtual ~resolver() {} // just to stop gcc complaining
 };
@@ -35,7 +35,7 @@ class resolver0 : public boost::enable_shared_from_this<resolver0>,
                   public resolver
 {
     boost::asio::ip::tcp::resolver r_;
-    
+
     void handle_resolve(string host, const boost::system::error_code& e, boost::asio::ip::tcp::resolver::iterator it)
     {
         boost::asio::detail::mutex::scoped_lock lock(mutex_);
@@ -45,20 +45,20 @@ class resolver0 : public boost::enable_shared_from_this<resolver0>,
                 std::cout << host << " >> " << it->endpoint().address().to_string() << std::endl;
         }
         else
-        {           
+        {
             std::cout << host <<  " >> unknown" << std::endl;
         }
     }
 
   public:
-    explicit resolver0(boost::asio::io_service& ios) 
+    explicit resolver0(boost::asio::io_service& ios)
             : r_(ios)
     {}
 
     void resolve(string host)
     {
         boost::asio::detail::mutex::scoped_lock lock(mutex_);
-        r_.async_resolve(boost::asio::ip::tcp::resolver::query(host, ""), 
+        r_.async_resolve(boost::asio::ip::tcp::resolver::query(host, ""),
                 boost::bind(&resolver0::handle_resolve, shared_from_this(), host,
                         boost::asio::placeholders::error,
                         boost::asio::placeholders::iterator));
@@ -74,7 +74,7 @@ class resolver1 : public boost::enable_shared_from_this<resolver1>,
     static int count_;
 
     void handle_resolve(string host, const boost::system::error_code& e, dns::resolver::iterator it)
-    {   
+    {
         boost::asio::detail::mutex::scoped_lock lock(mutex_);
         count_++;
         if (!e)
@@ -83,17 +83,17 @@ class resolver1 : public boost::enable_shared_from_this<resolver1>,
                 if (const boost::shared_ptr<dns::a_resource> ar = boost::dynamic_pointer_cast<dns::a_resource>(*it))
                     std::cout << host << " >> " << ar->address().to_string() << " [" << count_ << "]" << std::endl;
             return;
-        }           
-        std::cout << host <<  " >> unknown [" << count_ << "]"  << std::endl;   
+        }
+        std::cout << host <<  " >> unknown [" << count_ << "]"  << std::endl;
     }
 
   public:
-    explicit resolver1(boost::asio::io_service& ios) 
-            : r_(ios), 
+    explicit resolver1(boost::asio::io_service& ios)
+            : r_(ios),
               strand_(ios)
     {
     }
- 
+
     void resolve(string host)
     {
         boost::asio::detail::mutex::scoped_lock lock(mutex_);
@@ -130,9 +130,9 @@ int main(int argc, char** argv)
             ("resolvers,s", boost::program_options::value<int>(&p.rcnt)->default_value(2), "resolver count")
             ;
     boost::program_options::variables_map vm;
-    try 
+    try
     {
-        
+
         boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmd_opt).run(), vm);
         boost::program_options::notify(vm);
         if (vm.count("help"))
@@ -146,7 +146,7 @@ int main(int argc, char** argv)
         std::cerr << "bad options: " << e.what() << std::endl;
         return -1;
     }
-    
+
     boost::thread_group thr;
     for (int i=0; i< std::max(p.tcnt, 1); ++i)
         thr.create_thread(boost::bind(&boost::asio::io_service::run, &ios));
@@ -157,7 +157,7 @@ int main(int argc, char** argv)
 
     string host;
     boost::posix_time::ptime tm = boost::posix_time::microsec_clock::local_time();
-    
+
     std::vector<boost::shared_ptr<resolver> >::iterator resolver_it = resolvers.begin();
     while (getline(cin, host))
     {
@@ -171,7 +171,7 @@ int main(int argc, char** argv)
     work.reset();
 
     thr.join_all();
-    resolvers.clear();    
+    resolvers.clear();
 
     std::cout << "test " << p.type << " :time elapsed: " << boost::posix_time::microsec_clock::local_time()-tm << std::endl;
 

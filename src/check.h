@@ -5,13 +5,13 @@
 
 struct check
 {
-    typedef enum 
+    typedef enum
     {
         CHK_ACCEPT      = 0,
         CHK_REJECT,
         CHK_TEMPFAIL,
         CHK_DISCARD
-        
+
     } chk_status;
 
     chk_status m_result;
@@ -21,7 +21,7 @@ struct check
     std::string m_remote_ip;
 };
 
-struct check_rcpt_t: 
+struct check_rcpt_t:
         public check
 {
     std::string m_rcpt;
@@ -32,13 +32,12 @@ struct check_rcpt_t:
 struct check_data_t:
         public check
 {
-    check_data_t() : m_rc_puts_pending(0)
+    check_data_t()
     {
     }
 
     std::string m_remote_host;
     std::string m_helo_host;
-    int m_rc_puts_pending;
 };
 
 #endif // _CHECK_H_

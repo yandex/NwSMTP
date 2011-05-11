@@ -1,5 +1,11 @@
 #include "adkim.h"
+
+#define new a_better_variable_name
+#define _Bool bool
 #include <opendkim/dkim.h>
+#undef new
+#undef _Bool
+
 #include <net/dns_resolver.hpp>
 #include <boost/thread.hpp>
 #include <boost/array.hpp>
@@ -9,6 +15,8 @@
 #include <resolv.h>
 
 using namespace y::net;
+
+typedef ybuffers_iterator<ystreambuf::const_buffers_type> yconst_buffers_iterator;
 
 namespace {
 inline DKIM_STAT dkim_chunk_helper(DKIM *dkim, const char *chunkp, size_t len)
@@ -27,18 +35,18 @@ struct dkim_lib_loader : private boost::noncopyable
             : lib(dkim_init(NULL, NULL))
     {}
 
-    ~dkim_lib_loader()      
+    ~dkim_lib_loader()
     {
         if (lib)
             dkim_close(lib);
-    }    
+    }
 };
 
 template <class KeyLookup>
 class dkim_lib_singleton
-{    
-    static boost::scoped_ptr<dkim_lib_loader> ptr_; 
-    static boost::once_flag flag_; 
+{
+    static boost::scoped_ptr<dkim_lib_loader> ptr_;
+    static boost::once_flag flag_;
 
   public:
     static DKIM_LIB* instance()
@@ -83,23 +91,23 @@ struct dkim_check::dkim_check_impl :  public boost::enable_shared_from_this<dkim
 {
     typedef boost::array<char, DKIM_MAXHOSTNAMELEN + 1> req_t;
     typedef std::string res_t;
-    typedef std::pair<req_t, res_t> query_t; 
+    typedef std::pair<req_t, res_t> query_t;
     typedef std::list<query_t> ql_t;
 
     dkim_parameters p_;
-    dns::resolver r_;       
+    dns::resolver r_;
     boost::mutex mux_;
     bool done_;
-    DKIM* dkim_;        
+    DKIM* dkim_;
     ql_t ql_; // dns queries
-        
+
     dkim_check_impl(boost::asio::io_service& ios, const dkim_parameters& pp)
             : p_(pp),
-              r_(ios), 
+              r_(ios),
               done_(false),
               dkim_(0)
     {
-    }   
+    }
 
     ~dkim_check_impl()
     {
@@ -109,12 +117,12 @@ struct dkim_check::dkim_check_impl :  public boost::enable_shared_from_this<dkim
 
     void start(dkim_check::handler_t handler);
     void cont(dkim_check::handler_t handler);
-    DKIM_STAT helper(mutable_buffers::iterator b, mutable_buffers::iterator e);
+    DKIM_STAT helper(yconst_buffers_iterator b,
+            const yconst_buffers_iterator& e);
     void complete();
 };
 
 typedef boost::shared_ptr<dkim_check::dkim_check_impl> dkim_check_impl_ptr;
-
 
 namespace {
 extern "C" DKIM_CBSTAT y_dkim_key_lookup_seed (DKIM *dkim, DKIM_SIGINFO *sig,
@@ -131,7 +139,7 @@ extern "C" DKIM_CBSTAT y_dkim_key_lookup_seed (DKIM *dkim, DKIM_SIGINFO *sig,
     int n = snprintf(req.data(), req.size() - 1, "%s.%s.%s", dkim_sig_getselector(sig),
             DKIM_DNSKEYNAME, dkim_sig_getdomain(sig));
     if (n == -1 || static_cast<size_t>(n) > req.size())
-    {   
+    {
         return DKIM_STAT_NORESOURCE;
     }
 
@@ -144,7 +152,7 @@ extern "C" DKIM_CBSTAT y_dkim_key_lookup_seed (DKIM *dkim, DKIM_SIGINFO *sig,
         impl_t::res_t& res = qlit->second;
 
         memcpy(buf, res.data(), std::min(res.size(), buflen));
-        return DKIM_STAT_OK;    
+        return DKIM_STAT_OK;
     }
     else
     {
@@ -155,8 +163,8 @@ extern "C" DKIM_CBSTAT y_dkim_key_lookup_seed (DKIM *dkim, DKIM_SIGINFO *sig,
     return DKIM_STAT_KEYFAIL;
 }
 
-void y_dkim_key_lookup_collect_helper(const boost::system::error_code& ec, dns::resolver::iterator it, 
-        dkim_check_impl_ptr impl, 
+void y_dkim_key_lookup_collect_helper(const boost::system::error_code& ec, dns::resolver::iterator it,
+        dkim_check_impl_ptr impl,
         dkim_check::dkim_check_impl::ql_t::iterator qlit,
         dkim_check::handler_t handler)
 {
@@ -176,10 +184,10 @@ void y_dkim_key_lookup_collect_helper(const boost::system::error_code& ec, dns::
 
     if (qlit != impl->ql_.end())
     {
-        boost::mutex::scoped_lock lock(impl->mux_);     
+        boost::mutex::scoped_lock lock(impl->mux_);
         dkim_check::dkim_check_impl::req_t& req = qlit->first;
-        impl->r_.async_resolve(req.data(), dns::type_txt, 
-                boost::bind(y_dkim_key_lookup_collect_helper, 
+        impl->r_.async_resolve(req.data(), dns::type_txt,
+                boost::bind(y_dkim_key_lookup_collect_helper,
                         _1, _2, impl, qlit, handler)
                                );
     }
@@ -204,15 +212,13 @@ extern "C" DKIM_CBSTAT y_dkim_key_lookup_collect (DKIM *dkim, DKIM_SIGINFO *sig,
     int n = snprintf(req.data(), req.size() - 1, "%s.%s.%s", dkim_sig_getselector(sig),
             DKIM_DNSKEYNAME, dkim_sig_getdomain(sig));
     if (n == -1 || static_cast<size_t>(n) > req.size())
-    {   
+    {
         return DKIM_STAT_NORESOURCE;
     }
 
     return DKIM_STAT_NOKEY;
 }
 } // namespace
-
-
 
 const char* dkim_check::status(DKIM_STATUS s)
 {
@@ -222,37 +228,38 @@ const char* dkim_check::status(DKIM_STATUS s)
             return "pass";
         case DKIM_FAIL:
             return "fail";
-        case DKIM_NEUTRAL:    
-            return "neutral";           
+        case DKIM_NEUTRAL:
+            return "neutral";
         case DKIM_NONE:
         default:
             return "none";
     }
 }
 
-DKIM_STAT dkim_check::dkim_check_impl::helper(mutable_buffers::iterator bb, mutable_buffers::iterator ee)
+DKIM_STAT dkim_check::dkim_check_impl::helper(yconst_buffers_iterator bb,
+        const yconst_buffers_iterator& ee)
 {
-    mutable_buffers::iterator pp = bb;
+    yconst_buffers_iterator pp = bb;
     bool cr = false;
     bool lf = false;
     DKIM_STAT st = DKIM_STAT_OK;
     while (pp != ee && st == DKIM_STAT_OK)
     {
-        const char* b0 = bb.ptr();
-        const char* p0 = pp.ptr();
+        const char* b0 = &*bb;
+        const char* p0 = &*pp;
         const char* b = b0;
         const char* p = p0;
-        const char* e = pp.ptr_end(ee);
+        const char* e = ptr_end(pp, ee);
 
         while (p != e && st == DKIM_STAT_OK)
         {
-            if (p != e && lf && *p == '.')          
+            if (p != e && lf && *p == '.')
             {
                 assert(b == p);
                 b = ++p;
                 lf = false;
             }
-            
+
             while (p != e && *p != '\n' && *p != '\r')
                 ++p;
             if (p == e)
@@ -274,7 +281,7 @@ DKIM_STAT dkim_check::dkim_check_impl::helper(mutable_buffers::iterator bb, muta
                 b = p;
                 cr = false;
                 lf = true;
-            }       
+            }
             else if (p == b) // '\n'
             {
                 p++;
@@ -289,7 +296,7 @@ DKIM_STAT dkim_check::dkim_check_impl::helper(mutable_buffers::iterator bb, muta
                 if (st == DKIM_STAT_OK)
                     st = dkim_chunk_helper(dkim_, "\r\n", 2);
                 p++;
-                b = p;          
+                b = p;
                 cr = false;
                 lf = true;
             }
@@ -303,7 +310,7 @@ DKIM_STAT dkim_check::dkim_check_impl::helper(mutable_buffers::iterator bb, muta
 
         pp += (p - p0);
         bb = pp;
-    }    
+    }
 
     dkim_chunk(dkim_, NULL, 0);
     return st;
@@ -339,7 +346,8 @@ void dkim_check::dkim_check_impl::cont(dkim_check::handler_t handler)
     }
 
     DKIM_STAT st;
-    if ( ! (dkim_ = dkim_verify(lib1.instance(), "", NULL, &st)) || 
+    const unsigned char empty[] = {0};
+    if ( ! (dkim_ = dkim_verify(lib1.instance(), empty, NULL, &st)) ||
             (st != DKIM_STAT_OK) )
     {
         done_ = true;
@@ -348,7 +356,7 @@ void dkim_check::dkim_check_impl::cont(dkim_check::handler_t handler)
 
     void* ctx = this;
     dkim_set_user_context(dkim_, reinterpret_cast<const char*>(ctx));
-    
+
     st = helper(p_.b, p_.e);
 
     if (done_) // See if the request was canceled
@@ -361,26 +369,27 @@ void dkim_check::dkim_check_impl::cont(dkim_check::handler_t handler)
     else if (st != DKIM_STAT_OK)
         return handler(DKIM_NEUTRAL, std::string());
 
-    st = dkim_eom(dkim_, NULL);    
+    st = dkim_eom(dkim_, NULL);
 
-    boost::array<char, 256> identity;
+    boost::array<u_char, 256> identity;
     memset(identity.data(), 0, identity.size());
 
     if (DKIM_SIGINFO* sig = dkim_getsignature(dkim_))
-        dkim_sig_getidentity(dkim_, sig, identity.data(), identity.size()-1);    
+        dkim_sig_getidentity(dkim_, sig, identity.data(), identity.size()-1);
 
     if (st == DKIM_STAT_OK)
-        return handler(DKIM_PASS, std::string(identity.data()));
+        return handler(DKIM_PASS, std::string(identity.begin(), identity.end()));
     else if (st == DKIM_STAT_BADSIG)
-        return handler(DKIM_FAIL, std::string(identity.data()));
-    return handler(DKIM_NEUTRAL, identity.data());
+        return handler(DKIM_FAIL, std::string(identity.begin(), identity.end()));
+    return handler(DKIM_NEUTRAL, std::string(identity.begin(), identity.end()));
 }
 
 void dkim_check::dkim_check_impl::start(dkim_check::handler_t handler)
 {
     assert (!dkim_);
     DKIM_STAT st;
-    if ( !(dkim_ = dkim_verify(lib0.instance(), "", NULL, &st)) || 
+    const unsigned char empty[] = {0};
+    if ( !(dkim_ = dkim_verify(lib0.instance(), empty, NULL, &st)) ||
             (st != DKIM_STAT_OK) )
     {
         done_ = true;
@@ -392,7 +401,7 @@ void dkim_check::dkim_check_impl::start(dkim_check::handler_t handler)
     dkim_options(lib_, DKIM_OP_GETOPT, DKIM_OPTS_FLAGS, &dkflags, sizeof dkflags);
     dkflags |= DKIM_LIBFLAGS_VERIFYONE;
     dkim_options(lib_, DKIM_OP_SETOPT, DKIM_OPTS_FLAGS, &dkflags, sizeof dkflags);
-#endif 
+#endif
 
     void* ctx = this;
     dkim_set_user_context(dkim_, reinterpret_cast<const char*>(ctx));
@@ -406,10 +415,10 @@ void dkim_check::dkim_check_impl::start(dkim_check::handler_t handler)
     }
 
     boost::mutex::scoped_lock lock(mux_);
-    ql_t::iterator qlit = ql_.begin();                                  
+    ql_t::iterator qlit = ql_.begin();
     req_t& req = qlit->first;
-    r_.async_resolve(req.data(), dns::type_txt, 
-            boost::bind(y_dkim_key_lookup_collect_helper, 
+    r_.async_resolve(req.data(), dns::type_txt,
+            boost::bind(y_dkim_key_lookup_collect_helper,
                     _1, _2, shared_from_this(), qlit, handler)
                      );
 }

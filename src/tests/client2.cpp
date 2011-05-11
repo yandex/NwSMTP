@@ -30,8 +30,8 @@ struct state
     typedef socket_type::endpoint_type endpoint_type;
 
     state(boost::asio::io_service& ios, int req, const client_parameters& p)
-            : s_(ios), 
-              strand_(ios), 
+            : s_(ios),
+              strand_(ios),
               req_(req),
               p_(p),
               starttm_(boost::posix_time::microsec_clock::local_time())
@@ -56,23 +56,23 @@ struct state
 };
 
 inline ylog_t::helper logw(const boost::shared_ptr<state>& st)
-{   return ycout << "[" << st->num_ << "]:\t" << 
+{   return ycout << "[" << st->num_ << "]:\t" <<
             boost::posix_time::microsec_clock::local_time() - st->starttm_ << ":\t>>\t"; }
 
 inline ylog_t::helper logr(const boost::shared_ptr<state>& st)
-{   return ycout << "[" << st->num_ << "]:\t" << 
+{   return ycout << "[" << st->num_ << "]:\t" <<
             boost::posix_time::microsec_clock::local_time() - st->starttm_ << ":\t<<\t"; }
 
 inline ylog_t::helper logrerr(const boost::shared_ptr<state>& st)
-{   return ycout << "[" << st->num_ << "]:\t" 
+{   return ycout << "[" << st->num_ << "]:\t"
                  << boost::posix_time::microsec_clock::local_time() - st->starttm_ << ":\t(!)\tread error:"; }
 
 inline ylog_t::helper logwerr(const boost::shared_ptr<state>& st)
-{   return ycout << "[" << st->num_ << "]:\t" 
+{   return ycout << "[" << st->num_ << "]:\t"
                  << boost::posix_time::microsec_clock::local_time() - st->starttm_ << ":\t(!)\twrite error:"; }
 
 inline ylog_t::helper logstat(const boost::shared_ptr<state>& st)
-{   return ycout << "[" << st->num_ << "]:\t" 
+{   return ycout << "[" << st->num_ << "]:\t"
                  << boost::posix_time::microsec_clock::local_time() - st->starttm_ << ":\t(*)\t"; }
 
 
@@ -105,9 +105,9 @@ struct handle_read_badcmd
     {
         if (ec)
         {
-            logrerr(st) << ec.message();        
+            logrerr(st) << ec.message();
             return try_again(st, h);
-        } 
+        }
         typedef boost::asio::streambuf::const_buffers_type const_buffers_type;
         typedef boost::asio::buffers_iterator<const_buffers_type> iterator;
         const_buffers_type buffers = st->buf_.data();
@@ -125,7 +125,7 @@ struct handle_read_badcmd
         try {
             st->s_.close();
         } catch (...) {}
-        return try_again(st, h);                
+        return try_again(st, h);
     }
 };
 
@@ -144,7 +144,7 @@ struct handle_write_badcmd
             logwerr(st) << ec.message();
             return try_again(st, h);
         }
-        
+
         if (tagain)
         {
             try {
@@ -152,9 +152,9 @@ struct handle_write_badcmd
             } catch (...) {}
             return try_again(st, h);
         }
-        
+
         handle_read_badcmd<Handle> handle = { st, h };
-        boost::asio::async_read_until(st->s_, st->buf_, std::string("\r\n"), st->strand_.wrap(handle)); 
+        boost::asio::async_read_until(st->s_, st->buf_, std::string("\r\n"), st->strand_.wrap(handle));
     }
 };
 
@@ -168,7 +168,7 @@ class yrand
     unsigned int seed_;
     boost::mutex mux_;
 
-  public: 
+  public:
     explicit yrand(unsigned int seed = gen_seed())
             : seed_(seed)
     {}
@@ -182,7 +182,7 @@ class yrand
 
 template <class Iterator, class Rnd>
 class algen
-{ 
+{
     const boost::iterator_range<Iterator> r_;
     Rnd rnd_;
   public:
@@ -194,8 +194,8 @@ class algen
 
     typename std::iterator_traits<Iterator>::value_type operator()() const
     {
-        int idx = rnd_() % (r_.size() - 1);     
-        return *(r_.begin() + idx); 
+        int idx = rnd_() % (r_.size() - 1);
+        return *(r_.begin() + idx);
     }
 };
 
@@ -211,9 +211,9 @@ struct send_badcmd
         // generate invalid command
         string phrase;
         int wcount = 1 + g_rnd() % 4;
-        for (int i=0; i<wcount; ++i)    
+        for (int i=0; i<wcount; ++i)
         {
-            std::generate_n(std::back_inserter(phrase), g_rnd() % static_cast<int>(2 + exp10(g_rnd() % 3)),
+            std::generate_n(std::back_inserter(phrase), g_rnd() % static_cast<int>(2 + (g_rnd() % 3)),
                     algen<const char*, yrand&>(boost::as_literal("0123456789abcdefghijklmnopqrstxyz"), g_rnd)); // word
             std::generate_n(std::back_inserter(phrase), g_rnd() % 5,
                     algen<const char*, yrand&>(boost::as_literal(" \t"), g_rnd)); // separator
@@ -222,7 +222,7 @@ struct send_badcmd
         bool break_conn = (g_rnd() % 2) == 0;
         if (!break_conn)
             phrase += "\r\n";
-                    
+
         handle_write_badcmd<Handle> handle = { st, h, phrase, break_conn };
         logw(st) << phrase;
         st->s_.async_write_some(boost::asio::buffer(phrase), st->strand_.wrap(handle));
@@ -241,7 +241,7 @@ struct handle_read_rcptto
         {
             logrerr(st) << ec;
             return try_again(st, h);
-        } 
+        }
         typedef boost::asio::streambuf::const_buffers_type const_buffers_type;
         typedef boost::asio::buffers_iterator<const_buffers_type> iterator;
         const_buffers_type buffers = st->buf_.data();
@@ -280,7 +280,7 @@ struct handle_read_rcptto
 
 
 template <class Handle>
-struct handle_write_rcptto 
+struct handle_write_rcptto
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -291,22 +291,22 @@ struct handle_write_rcptto
         {
             logwerr(st) << ec.message();
             return try_again(st, h);
-        }       
-        
+        }
+
         handle_read_rcptto<Handle> handle = { st, h };
         boost::asio::async_read_until(st->s_, st->buf_, std::string("\r\n"), st->strand_.wrap(handle));
     }
 };
 
 template <class Handle>
-struct send_rcpto_series 
+struct send_rcpto_series
 {
     boost::shared_ptr<state> st;
     Handle h;
 
     void operator()()
     {
-        const char* rcpts[] = { 
+        const char* rcpts[] = {
             "rcpt to: <testuser20@ya.ru>\r\n",
             "rcpt to: <test.user.20@ya.ru>\r\n",
             "rcpt to: <testsurname@ya.ru>\r\n",
@@ -315,7 +315,7 @@ struct send_rcpto_series
 
         size_t maxidx = (sizeof (rcpts) / sizeof (const char*));
         const char* phrase = rcpts[ rand_r(&st->seed_) % maxidx ];
-        
+
         handle_write_rcptto<Handle> handle = { st, h };
         logw(st) << phrase;
         st->s_.async_write_some(boost::asio::buffer(phrase), st->strand_.wrap(handle));
@@ -323,7 +323,7 @@ struct send_rcpto_series
 };
 
 template <class Handle>
-struct handle_read_mailfrom 
+struct handle_read_mailfrom
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -334,7 +334,7 @@ struct handle_read_mailfrom
         {
             logrerr(st) << ec.message();
             return try_again(st, h);
-        } 
+        }
         typedef boost::asio::streambuf::const_buffers_type const_buffers_type;
         typedef boost::asio::buffers_iterator<const_buffers_type> iterator;
         const_buffers_type buffers = st->buf_.data();
@@ -364,7 +364,7 @@ struct handle_read_mailfrom
 };
 
 template <class Handle>
-struct handle_write_mailfrom 
+struct handle_write_mailfrom
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -375,15 +375,15 @@ struct handle_write_mailfrom
         {
             logwerr(st) << ec.message();
             return try_again(st, h);
-        }       
-        
+        }
+
         handle_read_mailfrom<Handle> handle = { st, h };
         boost::asio::async_read_until(st->s_, st->buf_, std::string("\r\n"), st->strand_.wrap(handle));
     }
 };
 
 template <class Handle>
-struct handle_read_ehlo 
+struct handle_read_ehlo
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -392,9 +392,9 @@ struct handle_read_ehlo
     {
         if (ec)
         {
-            logrerr(st) << ec.message();        
+            logrerr(st) << ec.message();
             return try_again(st, h);
-        } 
+        }
         typedef boost::asio::streambuf::const_buffers_type const_buffers_type;
         typedef boost::asio::buffers_iterator<const_buffers_type> iterator;
         const_buffers_type buffers = st->buf_.data();
@@ -430,7 +430,7 @@ struct handle_read_ehlo
 };
 
 template <class Handle>
-struct handle_write_ehlo 
+struct handle_write_ehlo
 {
     boost::shared_ptr<state> st;
     Handle h;
@@ -441,8 +441,8 @@ struct handle_write_ehlo
         {
             logwerr(st) << ec.message();
             return try_again(st, h);
-        }       
-        
+        }
+
         handle_read_ehlo<Handle> handle = { st, h };
         boost::asio::async_read_until(st->s_, st->buf_, std::string("\r\n"), st->strand_.wrap(handle));
     }
@@ -467,14 +467,14 @@ struct handle_connect
         const char* phrase = "EHLO ctor\r\n";
         logw(st) << phrase;
         st->s_.async_write_some(boost::asio::buffer(phrase), st->strand_.wrap(handle));
-    }    
+    }
 };
 
 template <class Handle>
 void start_send_message(boost::shared_ptr<state> st, Handle h)
 {
     state::endpoint_type endpoint(
-        boost::asio::ip::address_v4::from_string(st->p_.host), st->p_.port);    
+        boost::asio::ip::address_v4::from_string(st->p_.host), st->p_.port);
     handle_connect<Handle> handle = {st, h};
     st->s_.async_connect(endpoint, handle);
 }
@@ -508,11 +508,11 @@ int main(int argc, char** argv)
             ("concur,c", boost::program_options::value<int>(&p.concur)->default_value(10), "number of concurrent invocations of conseq requests")
             ;
     boost::program_options::variables_map vm;
-    try 
-    {   
+    try
+    {
         boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmd_opt).run(), vm);
         boost::program_options::notify(vm);
-        if (vm.count("help")) 
+        if (vm.count("help"))
         {
             ycout << cmd_opt;
             return 1;
@@ -523,7 +523,7 @@ int main(int argc, char** argv)
         cerr << "bad options: " << e.what();
         return -1;
     }
-    
+
     boost::thread_group thr;
     for (int i=0; i< std::max(p.tcnt, 1); ++i)
         thr.create_thread(boost::bind(&boost::asio::io_service::run, &ios));
@@ -534,7 +534,7 @@ int main(int argc, char** argv)
         send_message(ios, p, handle_send_message);
 
     work.reset();
-    
+
     thr.join_all();
 
     ycout << "time elapsed: " << boost::posix_time::microsec_clock::local_time()-tm;

@@ -7,21 +7,24 @@
 
 struct dkim_parameters
 {
-    mutable_buffers::iterator b;
-    mutable_buffers::iterator bs;
-    mutable_buffers::iterator e;        
+    typedef ybuffers_iterator<ystreambuf::const_buffers_type> yconst_buffers_iterator;
 
-    dkim_parameters(const mutable_buffers::iterator& beg, const mutable_buffers::iterator& body_beg, const mutable_buffers::iterator& end)
+    yconst_buffers_iterator b;
+    yconst_buffers_iterator bs;
+    yconst_buffers_iterator e;
+
+    dkim_parameters(const yconst_buffers_iterator& beg,
+            const yconst_buffers_iterator& body_beg, const yconst_buffers_iterator& end)
             :  b(beg), bs(body_beg), e(end)
     {}
 };
 
 class dkim_check
-{  
+{
   public:
     struct dkim_check_impl;
     enum DKIM_STATUS
-    {    
+    {
         DKIM_PASS,
         DKIM_NEUTRAL,
         DKIM_FAIL,
@@ -31,7 +34,7 @@ class dkim_check
     typedef boost::function< void (DKIM_STATUS, const std::string& indentity) > handler_t;
 
     dkim_check();
-  
+
     void start(boost::asio::io_service& ios, const dkim_parameters& p, handler_t handler);
 
     void stop();

@@ -19,7 +19,7 @@ class basic_socket_pool_service_settings
 };
 
 template <class Protocol, class Settings = basic_socket_pool_service_settings<Protocol> >
-class socket_pool_service 
+class socket_pool_service
         : public boost::asio::detail::service_base<socket_pool_service<Protocol, Settings> >
 
 {
@@ -61,7 +61,7 @@ class socket_pool_service
 
     boost::system::error_code close(implementation_type& impl,
             boost::system::error_code& ec)
-    {  
+    {
         return service_impl_.close(impl, ec);
     }
 
@@ -90,14 +90,14 @@ class socket_pool_service
 
     boost::system::error_code connect(implementation_type& impl,
             const endpoint_type& peer_endpoint, boost::system::error_code& ec)
-    { 
+    {
         return ec = boost::asio::error::operation_not_supported;
     }
 
     template <typename ConnectHandler>
     void async_connect(implementation_type& impl,
             const endpoint_type& peer_endpoint, ConnectHandler handler)
-    {  
+    {
         service_impl_.async_connect(impl, peer_endpoint, handler);
     }
 
@@ -119,7 +119,7 @@ class socket_pool_service
     boost::system::error_code io_control(implementation_type& impl,
             IoControlCommand& command, boost::system::error_code& ec)
     {
-        return ec = boost::asio::error::operation_not_supported; 
+        return ec = boost::asio::error::operation_not_supported;
     }
 
     endpoint_type local_endpoint(const implementation_type& impl,
@@ -139,13 +139,13 @@ class socket_pool_service
     {
         return service_impl_.shutdown(impl, what, ec);
     }
-    
+
     template <typename ConstBufferSequence>
     std::size_t send(implementation_type& impl,
             const ConstBufferSequence& buffers,
             boost::asio::socket_base::message_flags flags, boost::system::error_code& ec)
     {
-        return ec = boost::asio::error::operation_not_supported;    
+        return ec = boost::asio::error::operation_not_supported;
     }
 
     template <typename ConstBufferSequence, typename WriteHandler>
@@ -162,7 +162,7 @@ class socket_pool_service
             boost::asio::socket_base::message_flags flags, boost::system::error_code& ec)
     {
         //      return service_impl_.receive(impl, buffers, flags, ec);
-        return ec = boost::asio::error::operation_not_supported;    
+        return ec = boost::asio::error::operation_not_supported;
     }
 
     template <typename MutableBufferSequence, typename ReadHandler>
@@ -181,7 +181,7 @@ class socket_pool_service
     void construct(implementation_type& impl)
     {
         service_impl_.construct(impl);
-    }    
+    }
 
     void destroy(implementation_type& impl)
     {
@@ -193,7 +193,7 @@ class socket_pool_service
         service_impl_.cancel(impl);
     }
 
-  private:        
+  private:
     service_impl_type& service_impl_;
 };
 
