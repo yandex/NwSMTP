@@ -1,0 +1,24 @@
+option optimize_for = LITE_RUNTIME;
+
+message request_pb {
+  enum Command {
+    GET = 0;
+    ADD = 1;
+  }
+
+  required uint64 id = 1;
+  required Command command = 2;
+  required string key_namespace = 3;
+  required string key = 4;
+  optional int64 ttl = 5;
+  optional string comment = 6;
+  repeated int32 param = 7;
+}
+
+message reply_pb {
+  required uint64 id = 1;
+  required string key_namespace = 2;
+  required int64 age = 3;
+  required bool key_exists = 5;
+  repeated int32 result = 6;
+}

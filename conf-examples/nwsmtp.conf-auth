@@ -1,0 +1,93 @@
+debug = 0
+
+# daemon
+
+user=nwsmtp
+group=nwsmtp
+
+listen = 0.0.0.0:25
+listen = 0.0.0.0:587
+ssl_listen = 0.0.0.0:465
+workers = 16
+smtp_banner = (Want to use Yandex.Mail for your domain? Visit http://pdd.yandex.ru)
+
+
+#aliases = /etc/postfix/virtual_alias_maps
+
+smtpd_command_timeout = 75  
+smtpd_data_timeout = 120 
+smtpd_client_connection_count_limit = 50
+smtpd_connection_count_limit = 3000
+smtpd_hard_error_limit = 1024
+
+smtpd_recipient_limit = 25
+ip_config_file = /etc/nwsmtp/ip_param.conf
+
+#allow_percent_hack=yes
+
+message_size_limit=42991616
+
+remove_headers = 1
+remove_headers_list = /etc/nwsmtp/remove_headers.conf
+
+# services
+
+rbl_check = no
+rbl_hosts = spamsource.mail.yandex.net
+
+bb_check = 0
+bb_try = 2
+bb_file_path = /etc/yamail/blackbox_list.conf
+bb_primary = http://blackbox.yandex.net/blackbox
+bb_secondary = http://blackbox.yandex.net/blackbox
+bb_fallback_time = 1
+bb_return_time = 2
+bb_timeout = 1
+
+so_check = 1
+so_try = 2
+so_file_path = /etc/yamail/so_out_list.conf
+so_primary = so-out.yandex.ru:5252
+so_secondary = so-out.yandex.ru:5252
+so_fallback_time = 2
+so_return_time = 4
+so_connect_timeout = 3
+so_data_timeout = 30
+so_port = 5252
+so_trust_xyandexspam = 0
+
+av_check = 1
+av_try = 2
+av_primary = av.mail.yandex.net:3000
+av_secondary = av.mail.yandex.net:3000
+av_fallback_time = 10
+av_return_time = 10
+av_connect_timeout = 3
+av_data_timeout = 3
+
+rc_check = 0
+rc_verbose = 1
+rc_timeout = 1
+rc_host_list = /etc/yamail/rchost_list.conf
+
+# 0 - discard
+# 1 - reject
+action_virus = 0
+
+# relays
+
+relay_connect_timeout = 30 
+relay_cmd_timeout = 75
+relay_data_timeout = 300
+
+use_local_relay = yes
+local_relay_host = smtp://127.0.0.1:26
+
+fallback_relay_host = smtp://127.0.0.1:26
+
+use_auth = 1
+
+use_tls = 1
+tls_key_file=/etc/nwsmtp/ssl/key.key
+tls_cert_file=/etc/nwsmtp/ssl/cert.crt
+
