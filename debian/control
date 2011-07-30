@@ -8,7 +8,7 @@ Homepage: https://github.com/alexeimoisseev/NwSMTP
 
 Package: nwsmtp
 Architecture: any
-Depends: libboost-program-options1.44.0 (>= 1.44.0-1), libboost-system1.44.0 (>= 1.44.0-1), libboost-thread1.44.0 (>= 1.44.0-1), libc6 (>= 2.8), libexpat1 (>= 1.95.8), libopendkim3, libprotobuf6, libspf2-2 (>= 1.2.9~), libssl0.9.8 (>= 0.9.8m-1), zlib1g (>= 1:1.1.4), opendkim (>= 1.2.2-2~), expat (>= 1.95.8-8.3)
+Depends: libboost-program-options1.44.0 (>= 1.44.0-1), libboost-system1.44.0 (>= 1.44.0-1), libboost-thread1.44.0 (>= 1.44.0-1), libc6 (>= 2.8), libexpat1 (>= 1.95.8), libopendkim3, libprotobuf6, libspf2-2 (>= 1.2.9~), libssl0.9.8 (>= 0.9.8~), zlib1g (>= 1:1.1.4), opendkim (>= 1.2.2-2~), expat (>= 1.95.8-8.3)
 Description: Asynchronous SMTP proxy server
  GPL Licensed fully asynchronous SMTP proxy server for Linux used as a frontend proxy for Yandex.Mail. 
  Features include but are not limited to: ssl support, rbl checks, spam filtering, virus filtering, spf checks, dkim checks.
