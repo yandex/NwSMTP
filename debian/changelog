@@ -1,0 +1,5 @@
+nwsmtp (0.1-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Alexei Moisseev <alexmois@ya.ru>  Sat, 30 Jul 2011 14:03:22 +0400
