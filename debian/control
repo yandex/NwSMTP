@@ -2,7 +2,7 @@ Source: nwsmtp
 Section: mail
 Priority: extra
 Maintainer: Alexei Moisseev <alexmois@ya.ru>
-Build-Depends: debhelper (>= 7.0.50~), libboost1.44-dev, libspf2-dev (>= 1.2.9~), libopendkim-dev (>= 1.2.2-2~), libprotobuf-dev, libexpat1-dev, protobuf-compiler, libssl-dev
+Build-Depends: debhelper (>= 7.0.50~), libboost1.44-dev, libspf2-dev (>= 1.2.9~), libopendkim-dev (>= 1.2.2-2~), libprotobuf-dev, libexpat1-dev, protobuf-compiler, libssl-dev, libboost-regex1.44.0 
 Standards-Version: 3.9.1
 Homepage: https://github.com/alexeimoisseev/NwSMTP
 
